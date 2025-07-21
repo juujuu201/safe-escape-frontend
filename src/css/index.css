@@ -3,13 +3,56 @@
   --bg-color: #FAFAFA;
   --theme-color: #006F13;
   --border-color: #D9D9D9;
+  --disabled-color: #C9C9C9;
   --white: #FFFFFF;
   --black: #000000;
+  --red: #ED1C25;
+
+  --title-bar-height: 60px;
+  --menu-bar-width: 60px;
+
+  --border-radius: 10px;
 }
 
-html, body {width: 100%; height: 100%; margin: 0;}
+html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 #root, .document {width: inherit; height: inherit; display: flex;}
-.menu_bar {width: 5%; height: inherit;}
+.menu_bar {width: var(--menu-bar-width); height: inherit; justify-items: center;}
 .contents_area {position: relative; height: inherit; flex: 1;}
-.title_bar {width: inherit; height: 10%;}
-.side_bar {position: absolute; right: 16px; bottom: 16px; width: 25%; height: calc(90% - 32px); background: var(--bg-color);}
+.title_bar {width: inherit; height: var(--title-bar-height);}
+.side_bar {padding: 15px; border-radius: var(--border-radius);}
+
+/* WIDGETS */
+.image_button {margin: 10px;}
+.image_button > .MuiButtonBase-root,
+.image_button > .MuiButtonBase-root > img {width: inherit; height: inherit;}
+
+.text_button {margin-bottom: 15px; border-radius: var(--border-radius);}
+.text_button .MuiButtonBase-root {width: 100%; height: 100%;}
+.text_button .MuiBox-root {padding: 15px;}
+.text_button.disabled {background-color: var(--disabled-color) !important;}
+
+.text.title .MuiTypography-root {margin: 10px 0; font-size: 1.5rem; font-weight: 600;}
+.text.sub_title .MuiTypography-root {width: fit-content; margin-bottom: 10px; font-size: 1.2rem; font-weight: 400; color: var(--black);}
+.text.description .MuiTypography-root {width: fit-content; color: var(--black);}
+
+/*.tab {margin: 10px;}*/
+.tab .MuiTabs-root .MuiButtonBase-root.Mui-selected {color: var(--theme-color);}
+.tab .MuiTabs-root .MuiTabs-indicator {background-color: var(--theme-color);}
+.tab.vertical > .MuiBox-root {border: none;}
+.tab.vertical > .MuiBox-root > .MuiTabs-root > .MuiTabs-scroller > .MuiTabs-list > button.MuiButtonBase-root {min-width: unset; min-height: 0; margin: 5px 10px; padding-left: 0; padding-right: 0;}
+
+/* VIEW */
+.logo_tab_button {width: 45px; height: 45px; margin-bottom: 30px;}
+.menu_tab {width: 50px;}
+.menu_tab img {width: 25px; height: 25px;}
+.menu_tab .tab_panel {position: absolute; left: var(--menu-bar-width); top: var(--title-bar-height); width: calc(100% - var(--menu-bar-width)); height: calc(100% - var(--title-bar-height));}
+
+.map_area {width: 100%; height: 100%;}
+.home.contents_area .side_bar {position: absolute; right: 16px; top: 16px; width: 300px; height: calc(100% - 32px); background: var(--bg-color);}
+.congestion.contents_area .side_bar {position: absolute; right: 16px; top: 16px; width: 200px; background: var(--bg-color);}
+
+.home.side_bar .text_button { background-color: var(--white); border: 1px solid lightgray;}
+.home.side_bar .text_button .MuiBox-root {width: 100%; height: 100%;}
+.congestion.side_bar .text_button {background-color: var(--theme-color); border-radius: 12px;}
+.congestion.side_bar .text_button .MuiBox-root {padding: 10px;}
+.congestion.side_bar .text_button .text .MuiTypography-root {color: var(--white); font-weight: 400;}
