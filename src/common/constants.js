@@ -18,7 +18,8 @@ const Constants = {
         TAB_BUTTON: "tab_button",
         TAB_PANEL: "tab_panel",
         TEXT: "text",
-        IMAGE: "image"
+        IMAGE: "image",
+        MAP_TOOLTIP: "map_tooltip"
     },
 
     /* MENU NAMES */
@@ -41,11 +42,32 @@ const Constants = {
     DESCRIPTION_CLASS: "description",
 
     /* CLASSES */
+    DISABLED_CLASS: "disabled",
+
     LOGO_TAB_BUTTON: "logo_tab_button",
     MENU_TAB: "menu_tab",
     HOME_TAB_BUTTON: "home_tab_button",
     CONGESTION_TAB_BUTTON: "congestion_tab_button",
-    DISABLED_CLASS: "disabled"
+    MAP_TOOLTIP_CONTENT: "map_tooltip_content",
+    SHELTER_LIST_CLASS: "shelter_list",
+
+    /* ID */
+    MAP_AREA_ID: "map_area",
+    MARKER_BG_ID: "marker_bg",
+
+    /* MAP OPTION KEYS*/
+    MAP_OPTION_KEYS: {
+        DEFAULT_LOCATION: "center",
+        DISABLE_DOUBLE_CLICK_ZOOM: "disableDoubleClickZoom",
+        DISABLE_DOUBLE_TAP_ZOOM: "disableDoubleTapZoom",
+        DISABLE_TWO_FINGER_TAP_ZOOM: "disableTwoFingerTapZoom",
+        LOGO_CONTROL: "logoControl",
+        MAP_DATA_CONTROL: "mapDataControl",
+        SCALE_CONTROL: "scaleControl",
+        ZOOM: "zoom"
+    },
+
+    IMAGE_URL: "/images/"
 };
 
 export default Constants;

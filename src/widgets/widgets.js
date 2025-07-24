@@ -1,7 +1,8 @@
 import {useState} from "react";
 import Constants from "../common/constants.js";
 import Resources from "../common/resources.js";
-import {Box, ButtonBase, Tab, Tabs, Typography} from "@mui/material";
+import {Box, ButtonBase, IconButton, Tab, Tabs, Typography} from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
 
 const _widgetNames = Constants.WIDGET_NAMES;
 
@@ -177,6 +178,35 @@ export const SEText = (props) => {
     return (
         <div className={_extendClassName(_widgetNames.TEXT, className)}>
             <Typography color={color || Constants.COLORS.THEME} variant={size} align={align} {...styleProps}>{desc}</Typography>
+        </div>
+    );
+};
+
+export const SEMapTooltip = (props) => {
+    const {image, isOpen, title, desc, className, onClose} = props;
+
+    function _onClose() {
+        if (onClose) {
+            onClose();
+        }
+    }
+
+    if (!isOpen) {
+        return null;
+    }
+
+    return (
+        <div className={_extendClassName(_widgetNames.MAP_TOOLTIP, className)}>
+            <IconButton onClick={_onClose}>
+                <CloseIcon fontSize="small"/>
+            </IconButton>
+            <div className={Constants.MAP_TOOLTIP_CONTENT}>
+                {image && <SEImage image={image}/>}
+                <div>
+                    {title && <SEText className={Constants.SUBTITLE_CLASS} desc={title}/>}
+                    {desc && <SEText className={Constants.DESCRIPTION_CLASS} desc={desc}/>}
+                </div>
+            </div>
         </div>
     );
 };
