@@ -1,3 +1,5 @@
+import Constants from "./constants.js";
+
 export default class Util {
     /**
      * 네이버 지도 위치 객체를 만들어 반환한다.
@@ -29,6 +31,34 @@ export default class Util {
 
         if (!obj && !(typeof obj === "object" && Object.keys(obj)?.length > 0)) {
             result = true;
+        }
+
+        return result;
+    }
+
+    static getDistanceBetweenCoord(coord1, coord2) {
+        if (!(coord1 && coord2)) {
+            return null;
+        }
+
+        const lat1 = coord1.lat(),
+            lon1 = coord1.lng(),
+            lat2 = coord2.lat(),
+            lon2 = coord2.lng();
+        let result = null;
+
+        if (lat1 != null && lon1 != null && lat2 != null && lon2 != null) {
+            const dLat = (lat2 - lat1) * Math.PI / 180,
+                dLon = (lon2 - lon1) * Math.PI / 180,
+                haversine =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) *
+                    Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) *
+                    Math.sin(dLon / 2),
+                centralAngle = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+
+            result = Constants.EARTH_R * centralAngle;
         }
 
         return result;

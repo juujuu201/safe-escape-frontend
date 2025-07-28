@@ -1,8 +1,8 @@
 import {useState} from "react";
 import Constants from "../common/constants.js";
 import Resources from "../common/resources.js";
-import {Box, ButtonBase, IconButton, Tab, Tabs, Typography} from "@mui/material";
-import CloseIcon from '@mui/icons-material/Close';
+import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography} from "@mui/material";
+import {Close} from "@mui/icons-material";
 
 const _widgetNames = Constants.WIDGET_NAMES;
 
@@ -98,6 +98,27 @@ export const SETextButton = (props) => {
                     {descEl}
                 </Box>
             </ButtonBase>
+        </div>
+    );
+};
+
+export const SEIconButton = (props) => {
+    const {caption, desc, icon, className, onClick, sx} = props;
+    let iconButtonEl = <IconButton sx={sx}>{icon}</IconButton>,
+        descEl;
+
+    if (caption) {
+        iconButtonEl = <Tooltip title={caption}>{iconButtonEl}</Tooltip>;
+    }
+
+    if (desc) {
+        descEl = <div>{desc}</div>;
+    }
+
+    return (
+        <div className={_extendClassName(_widgetNames.ICON_BUTTON, className)} onClick={onClick}>
+            {iconButtonEl}
+            {descEl}
         </div>
     );
 };
@@ -198,7 +219,7 @@ export const SEMapTooltip = (props) => {
     return (
         <div className={_extendClassName(_widgetNames.MAP_TOOLTIP, className)}>
             <IconButton onClick={_onClose}>
-                <CloseIcon fontSize="small"/>
+                <Close fontSize="small"/>
             </IconButton>
             <div className={Constants.MAP_TOOLTIP_CONTENT}>
                 {image && <SEImage image={image}/>}

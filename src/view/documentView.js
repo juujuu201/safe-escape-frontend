@@ -5,7 +5,9 @@ import Define from "../common/define.js";
 import Util from "../common/utils.js";
 import {useModel} from "../controller/UseModel.js";
 import {appModel, MarkerModel} from "../model/AppModel.js";
-import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip} from "../widgets/widgets.js";
+import AppController from "../controller/AppController.js";
+import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip, SEIconButton} from "../widgets/widgets.js";
+import {Refresh} from "@mui/icons-material";
 
 const _naverMap = window.naver,
     _viewNames = Constants.VIEW_NAMES,
@@ -90,20 +92,16 @@ const SideBarView = (props) => {
 const HomeSideBarView = () => {
     const shelterList = [       /** TODO: 테스트용 */
             {
-                address: "인수동 자치회관",
-                detail: "서울특별시 강북구 인수봉로 255",
-                coordinates: {
-                    latitude: 37.6414869298367,
-                    longitude: 127.010596846898
-                }
+                name: "인수동 자치회관",
+                address: "서울특별시 강북구 인수봉로 255",
+                latitude: 37.635451,
+                longitude: 127.019194
             },
             {
-                address: "성균관대학교 자연과학캠퍼스",
-                detail: "경기 수원시 장안구 서부로 2066",
-                coordinates: {
-                    latitude: 37.2959770000514,
-                    longitude: 126.974164012539
-                }
+                name: "성균관대학교 자연과학캠퍼스",
+                address: "경기 수원시 장안구 서부로 2066",
+                latitude: 37.293929,
+                longitude: 126.974348
             }
         ],
         map = useModel(appModel, "map"),
@@ -123,11 +121,11 @@ const HomeSideBarView = () => {
                 btnList = [];
 
             for (const shelter of shelterList) {
-                const {address, detail, coordinates} = shelter,
+                const {name, address, latitude, longitude} = shelter,
                     markerModel = new MarkerModel({
-                        position: Util.getLocationObj(coordinates, _naverMap),
-                        title: address,
-                        desc: detail,
+                        position: Util.getLocationObj({latitude, longitude}, _naverMap),
+                        title: name,
+                        desc: address,
                         onClick: _onClickMarker,
                         map,
                         naverMap: _naverMap
@@ -137,7 +135,7 @@ const HomeSideBarView = () => {
                     markerModels.push(markerModel);
 
                     btnList.push(
-                        <SETextButton title={address} desc={detail} onClick={e => _onClickButton(e, markerModel)}/>
+                        <SETextButton title={name} desc={address} onClick={e => _onClickButton(e, markerModel)}/>
                     );
                 }
             }
@@ -196,7 +194,26 @@ const Map = (props) => {
 
 const HomeMapView = () => {
     const centerModel = useModel(appModel, "centerModel"),
+        refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
         name = Constants.MENU_NAMES.HOME;
+
+    function _onClickRefresh() {
+        const map = appModel.map;
+
+        if (map) {
+            const centerPos = map.getCenter();
+
+            appModel.setValue("refreshBtnEnabled", false);
+            appModel.setValue("centerModel", new MarkerModel({
+                position: centerPos,
+                map,
+                naverMap: _naverMap,
+                hasMarker: false
+            }));
+
+            /* TODO: 현재 위치에서 대피소 재검색 */
+        }
+    }
 
     useEffect(() => {
         if (centerModel) {
@@ -208,28 +225,23 @@ const HomeMapView = () => {
         <div className={`${_viewNames.CONTENTS_AREA} ${name}`}>
             <Map showTooltip={true}/>
             <MarkerTooltipView/>
+            {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>} desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
             <SideBarView name={name}/>
         </div>
     );
 };
 
 const MarkerTooltipView = () => {
-    const markerTooltipModel = appModel.markerTooltipModel,
-        centerModel = appModel.centerModel,
+    const {markerTooltipModel, centerModel} = appModel,
         isVisible = useModel(markerTooltipModel, "isVisible");
 
     if (!markerTooltipModel || !markerTooltipModel.isVisible) {
         return null;
     }
 
-    function _onCloseTooltip() {
-        centerModel.deSelect();
-        markerTooltipModel.hide();
-    }
-
     return (
         <SEMapTooltip image={`${Constants.IMAGE_URL}markerSelected.svg`} isOpen={isVisible}
-                      title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={_onCloseTooltip}/>
+                      title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={() => {AppController.closeMapTooltip(centerModel);}}/>
     );
 };
 

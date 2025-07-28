@@ -1,6 +1,8 @@
 import eventBus from "../controller/EventBus.js";
 import Constants from "../common/constants.js";
 import Define from "../common/define.js";
+import Util from "../common/utils.js";
+import AppController from "../controller/AppController.js";
 
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
@@ -33,6 +35,7 @@ class AppModel extends Model {
         this.centerModel = null;
         this.markerModels = [];
         this.markerTooltipModel = new MarkerTooltipModel();
+        this.refreshBtnEnabled = false;
     }
 
     removeMarker(model) {
@@ -48,14 +51,15 @@ export class MarkerModel extends Model {
     constructor(options = {}) {
         super();
 
-        const {position, icon, iconSize, selectedColor, title, desc, onClick, onMouseOver, onMouseOut, map, naverMap} = options;
+        const {position, icon, iconSize, selectedColor, title, desc, onClick, onMouseOver, onMouseOut, map, naverMap, hasMarker} = options;
 
         if (!(position && map)) {
             return;
         }
 
         this._svgEl = null;
-        this._icon = icon ?? _defaultMarkerIcon;
+        this._hasMarker = hasMarker ?? true;
+        this._icon = (this._hasMarker ? (icon ?? _defaultMarkerIcon) : null);
 
         this.position = position;
         this.iconUrl = this._icon;
@@ -156,6 +160,31 @@ export class MarkerModel extends Model {
 
                 if (this.onMouseOut) {
                     this.onMouseOut(e);
+                }
+            }
+        });
+
+        this.naverMap.maps.Event.addListener(this.map, "center_changed", () => {
+            const centerModel = appModel.getValue("centerModel"),
+                markerTooltipModel = appModel.getValue("markerTooltipModel");
+
+            if (centerModel) {
+                const prevCenter = centerModel.position ?? Util.getLocationObj(Define.DEFAULT_LOCATION),
+                    curCenter = this.map.getCenter();
+                let distance;
+
+                // 이전 센터와 현재 센터 간 거리가 1km 이상인 경우 새로고침 버튼 활성화
+                if (prevCenter && curCenter) {
+                    distance = Util.getDistanceBetweenCoord(prevCenter, curCenter);
+
+                    if (distance >= 1000) {
+                        appModel.setValue("refreshBtnEnabled", true);
+                    }
+                }
+
+                // 툴팁이 열려있는 경우 닫기
+                if (markerTooltipModel?.isVisible) {
+                    AppController.closeMapTooltip(centerModel);
                 }
             }
         });

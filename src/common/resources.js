@@ -9,7 +9,9 @@ const Resources = {
     CANCEL_CONGESTION_AREA: "혼잡 지역 취소",
     SET_EXIT: "비상구 설정하기",
     RESET_EXIT: "비상구 초기화",
-    FINISH_EXIT: "비상구 설정 완료"
+    FINISH_EXIT: "비상구 설정 완료",
+
+    REFRESH: "새로고침"
 };
 
 export default Resources;

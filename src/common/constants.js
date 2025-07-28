@@ -50,6 +50,7 @@ const Constants = {
     CONGESTION_TAB_BUTTON: "congestion_tab_button",
     MAP_TOOLTIP_CONTENT: "map_tooltip_content",
     SHELTER_LIST_CLASS: "shelter_list",
+    REFRESH_BTN_CLASS: "refresh_btn",
 
     /* ID */
     MAP_AREA_ID: "map_area",
@@ -67,7 +68,9 @@ const Constants = {
         ZOOM: "zoom"
     },
 
-    IMAGE_URL: "/images/"
+    /* VALUES */
+    IMAGE_URL: "/images/",
+    EARTH_R: 6371000
 };
 
 export default Constants;
