@@ -33,13 +33,21 @@ const Constants = {
         THEME: "#006F13",
         RED: "#ED1C25",
         BLACK: "#000000",
-        WHITE: "#FFFFFF"
+        WHITE: "#FFFFFF",
+
+        CROWDED_LEVEL: {
+            FREE: "#C1FFB9",
+            NORMAL: "#FEFFAE",
+            CROWDED: "#FFBCA1",
+            VERY_CROWDED: "#FF9E9E"
+        }
     },
 
     /* WIDGET CLASSES */
     TITLE_CLASS: "title",
     SUBTITLE_CLASS: "sub_title",
     DESCRIPTION_CLASS: "description",
+    TAB_TEXT_CLASS: "tab_text",
 
     /* CLASSES */
     DISABLED_CLASS: "disabled",
@@ -70,7 +78,13 @@ const Constants = {
 
     /* VALUES */
     IMAGE_URL: "/images/",
-    EARTH_R: 6371000
+    EARTH_R: 6371000,
+    CROWDED_LEVEL: {
+        FREE: "free",
+        NORMAL: "normal",
+        CROWDED: "crowded",
+        VERY_CROWDED: "very_crowded"
+    }
 };
 
 export default Constants;

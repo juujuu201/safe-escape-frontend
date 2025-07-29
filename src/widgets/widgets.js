@@ -1,6 +1,7 @@
 import {useState} from "react";
 import Constants from "../common/constants.js";
 import Resources from "../common/resources.js";
+import Util from "../common/utils.js";
 import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography} from "@mui/material";
 import {Close} from "@mui/icons-material";
 
@@ -135,16 +136,29 @@ export const SETab = (props) => {
         const {name, image, icon, panel} = tabInfo,
             attr = {};
 
-        if (descVisible) {
-            attr["label"] = Resources[name.toUpperCase()];
-        }
-
         if (image) {
             attr["label"] = <img alt={name} src={image}/>;
         }
 
         if (icon) {
             attr["icon"] = icon;
+        }
+
+        if (descVisible) {
+            const desc = Resources[name.toUpperCase()];
+
+            if (desc) {
+                if (attr.hasOwnProperty("label")) {
+                    attr["label"] = (
+                        <>
+                            {attr["label"]}
+                            <span className={Constants.TAB_TEXT_CLASS}>{desc}</span>
+                        </>
+                    );
+                } else {
+                    attr["label"] = desc;
+                }
+            }
         }
 
         tabList.push(<Tab key={`${name}_tab`} {...attr}/>);
@@ -204,7 +218,8 @@ export const SEText = (props) => {
 };
 
 export const SEMapTooltip = (props) => {
-    const {image, isOpen, title, desc, className, onClose} = props;
+    const {image, isOpen, title, desc, className, onClose, style} = props;
+    let styleObj;
 
     function _onClose() {
         if (onClose) {
@@ -216,8 +231,12 @@ export const SEMapTooltip = (props) => {
         return null;
     }
 
+    if (!Util.isEmptyObject(style)) {
+        styleObj = style;
+    }
+
     return (
-        <div className={_extendClassName(_widgetNames.MAP_TOOLTIP, className)}>
+        <div className={_extendClassName(_widgetNames.MAP_TOOLTIP, className)} style={styleObj}>
             <IconButton onClick={_onClose}>
                 <Close fontSize="small"/>
             </IconButton>

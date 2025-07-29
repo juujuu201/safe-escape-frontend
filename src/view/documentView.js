@@ -4,7 +4,7 @@ import Resources from "../common/resources.js";
 import Define from "../common/define.js";
 import Util from "../common/utils.js";
 import {useModel} from "../controller/UseModel.js";
-import {appModel, MarkerModel} from "../model/AppModel.js";
+import {appModel, MarkerModel, CongestionModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip, SEIconButton} from "../widgets/widgets.js";
 import {Refresh} from "@mui/icons-material";
@@ -28,7 +28,10 @@ const DocumentView = () => {
     return (
         <div className={_viewNames.DOCUMENT}>
             <MenuBarView/>
-            <TitleBarView/>
+            <div className={_viewNames.CONTENTS_AREA}>
+                <TitleBarView/>
+                <MapAreaView name={_menuNames.HOME}/>
+            </div>
         </div>
     );
 };
@@ -38,12 +41,12 @@ const MenuBarView = () => {
         {
             name: _menuNames.HOME,
             image: `${Constants.IMAGE_URL}home.svg`,
-            panel: <MapAreaView name={_menuNames.HOME}/>
+            panel: <SideBarView name={_menuNames.HOME}/>
         },
         {
             name: _menuNames.CONGESTION,
             image: `${Constants.IMAGE_URL}congestion.svg`,
-            panel: <MapAreaView name={_menuNames.CONGESTION}/>
+            panel: <SideBarView name={_menuNames.CONGESTION}/>
         }
     ];
 
@@ -54,7 +57,7 @@ const MenuBarView = () => {
     return (
         <div className={_viewNames.MENU_BAR}>
             <SEImageButton className={Constants.LOGO_TAB_BUTTON} image={`${Constants.IMAGE_URL}logo.svg`} onClick={_onClick}/>
-            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME}/>
+            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME} descVisible={true}/>
         </div>
     );
 };
@@ -68,11 +71,39 @@ const TitleBarView = () => {
 };
 
 const MapAreaView = (props) => {
-    const {name} = props;
+    const centerModel = useModel(appModel, "centerModel"),
+        refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled");
+
+    function _onClickRefresh() {
+        const map = appModel.map;
+
+        if (map) {
+            const centerPos = map.getCenter();
+
+            appModel.setValue("refreshBtnEnabled", false);
+            appModel.setValue("centerModel", new MarkerModel({
+                position: centerPos,
+                map,
+                naverMap: _naverMap,
+                hasMarker: false
+            }));
+
+            /* TODO: 현재 위치에서 대피소 재검색 */
+        }
+    }
+
+    useEffect(() => {
+        if (centerModel) {
+            centerModel.show(true);
+        }
+    }, [centerModel]);
 
     return (
         <div className={_viewNames.MAP_AREA}>
-            {name === _menuNames.HOME ? <HomeMapView/> : <CongestionMapView/>}
+            <Map showTooltip={true}/>
+            <MarkerTooltipView/>
+            {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>}
+                                                desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
         </div>
     );
 };
@@ -92,16 +123,30 @@ const SideBarView = (props) => {
 const HomeSideBarView = () => {
     const shelterList = [       /** TODO: 테스트용 */
             {
+                id: "1",
                 name: "인수동 자치회관",
                 address: "서울특별시 강북구 인수봉로 255",
                 latitude: 37.635451,
                 longitude: 127.019194
             },
             {
+                id: "2",
                 name: "성균관대학교 자연과학캠퍼스",
                 address: "경기 수원시 장안구 서부로 2066",
                 latitude: 37.293929,
                 longitude: 126.974348
+            }
+        ],
+        congestionList = [
+            {
+                latitude: 37.646713,
+                longitude: 127.024274,
+                level: Constants.CROWDED_LEVEL.FREE
+            },
+            {
+                latitude: 37.634296,
+                longitude: 127.017533,
+                level: Constants.CROWDED_LEVEL.CROWDED
             }
         ],
         map = useModel(appModel, "map"),
@@ -120,8 +165,9 @@ const HomeSideBarView = () => {
             const markerModels = [],
                 btnList = [];
 
+            // 대피소 마커 모델 생성
             for (const shelter of shelterList) {
-                const {name, address, latitude, longitude} = shelter,
+                const {id, name, address, latitude, longitude} = shelter,
                     markerModel = new MarkerModel({
                         position: Util.getLocationObj({latitude, longitude}, _naverMap),
                         title: name,
@@ -134,14 +180,30 @@ const HomeSideBarView = () => {
                 if (markerModel) {
                     markerModels.push(markerModel);
 
+                    // 사이드바 내 대피소 목록 표시
                     btnList.push(
-                        <SETextButton title={name} desc={address} onClick={e => _onClickButton(e, markerModel)}/>
+                        <SETextButton key={id} title={name} desc={address} onClick={e => _onClickButton(e, markerModel)}/>
                     );
                 }
             }
 
             appModel.setValue("markerModels", markerModels);
             setShelterBtnList(btnList);
+
+            // 혼잡도 모델 생성
+            for (const congestion of congestionList) {
+                const {latitude, longitude, level} = congestion,
+                    congestionModel = new CongestionModel({
+                        position: Util.getLocationObj({latitude, longitude}, _naverMap),
+                        level,
+                        map,
+                        naverMap: _naverMap
+                    });
+
+                if (congestionModel) {
+                    congestionModel.show();
+                }
+            }
         }
     }, [map]);
 
@@ -192,67 +254,22 @@ const Map = (props) => {
     return <div id={Constants.MAP_AREA_ID}/>;
 };
 
-const HomeMapView = () => {
-    const centerModel = useModel(appModel, "centerModel"),
-        refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
-        name = Constants.MENU_NAMES.HOME;
-
-    function _onClickRefresh() {
-        const map = appModel.map;
-
-        if (map) {
-            const centerPos = map.getCenter();
-
-            appModel.setValue("refreshBtnEnabled", false);
-            appModel.setValue("centerModel", new MarkerModel({
-                position: centerPos,
-                map,
-                naverMap: _naverMap,
-                hasMarker: false
-            }));
-
-            /* TODO: 현재 위치에서 대피소 재검색 */
-        }
-    }
-
-    useEffect(() => {
-        if (centerModel) {
-            centerModel.show(true);
-        }
-    }, [centerModel]);
-
-    return (
-        <div className={`${_viewNames.CONTENTS_AREA} ${name}`}>
-            <Map showTooltip={true}/>
-            <MarkerTooltipView/>
-            {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>} desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
-            <SideBarView name={name}/>
-        </div>
-    );
-};
-
 const MarkerTooltipView = () => {
     const {markerTooltipModel, centerModel} = appModel,
-        isVisible = useModel(markerTooltipModel, "isVisible");
+        isVisible = useModel(markerTooltipModel, "isVisible"),
+        style = useModel(markerTooltipModel, "style") || {};
+
+    function _onClose() {
+        AppController.closeMapTooltip(centerModel);
+    }
 
     if (!markerTooltipModel || !markerTooltipModel.isVisible) {
         return null;
     }
 
     return (
-        <SEMapTooltip image={`${Constants.IMAGE_URL}markerSelected.svg`} isOpen={isVisible}
-                      title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={() => {AppController.closeMapTooltip(centerModel);}}/>
-    );
-};
-
-const CongestionMapView = () => {
-    const name = Constants.MENU_NAMES.CONGESTION;
-
-    return (
-        <div className={`${_viewNames.CONTENTS_AREA} ${name}`}>
-            <Map/>
-            <SideBarView name={name}/>
-        </div>
+        <SEMapTooltip image={`${Constants.IMAGE_URL}markerSelected.svg`} isOpen={isVisible} style={style}
+                      title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={_onClose}/>
     );
 };
 

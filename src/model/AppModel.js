@@ -73,6 +73,7 @@ export class MarkerModel extends Model {
         this.onMouseOver = onMouseOver;
         this.onMouseOut = onMouseOut;
 
+        this.element = null;
         this.marker = null;
         this.map = map;
         this.naverMap = naverMap ?? window.naver;
@@ -211,6 +212,7 @@ export class MarkerModel extends Model {
                     scaledSize: new this.naverMap.maps.Size(this.iconSize, this.iconSize)
                 },
             });
+            this.element = this.marker.eventTarget;
 
             this.attachEvents();
             this.marker.setPosition(this.position);
@@ -240,20 +242,62 @@ class MarkerTooltipModel extends Model {
         this.isVisible = false;
         this.title = "";
         this.desc = "";
+        this.style = {};
     }
 
     show(markerModel) {
-        const {title, desc} = markerModel;
+        const {title, desc, element} = markerModel;
 
         this.setValue("isVisible", true);
         this.setValue("title", title);
         this.setValue("desc", desc);
+
+        if (element) {
+            const {top, left} = element.getBoundingClientRect();
+
+            this.setValue("style", {
+                top: `${top}px`,
+                left: `${left}px`
+            });
+        }
     }
 
     hide() {
         this.setValue("isVisible", false);
         this.setValue("title", "");
         this.setValue("desc", "");
+    }
+}
+
+export class CongestionModel extends Model {
+    constructor(options = {}) {
+        super();
+
+        const {position, level, map, naverMap} = options;
+
+        if (position == null || level == null) {
+            return;
+        }
+
+        this.position = position ?? Util.getLocationObj(Define.DEFAULT_LOCATION, naverMap);
+        this.level = level ?? Constants.CROWDED_LEVEL.NORMAL;
+        this.area = null;
+
+        this.map = map;
+        this.naverMap = naverMap;
+    }
+
+    show() {
+        this.area = new this.naverMap.maps.Circle({
+            center: this.position,
+            map: this.map,
+            radius: 1000,
+            fillColor: Constants.COLORS.CROWDED_LEVEL[this.level.toUpperCase()],
+            fillOpacity: 0.4,
+            strokeOpacity: 0
+        });
+
+        this.area.setMap(this.map)
     }
 }
 
