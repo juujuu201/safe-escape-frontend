@@ -36,6 +36,9 @@ class AppModel extends Model {
         this.markerModels = [];
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
+
+        this.status = Constants.STATUS_TYPE.NONE;
+        this.menuButtonModels = [];
     }
 
     removeMarker(model) {
@@ -298,6 +301,19 @@ export class CongestionModel extends Model {
         });
 
         this.area.setMap(this.map)
+    }
+}
+
+export class MenuButtonModel extends Model {
+    constructor(options = {}) {
+        super();
+
+        const {isVisible, isDisabled, desc, value} = options;
+
+        this.isVisible = isVisible ?? false;
+        this.isDisabled = isDisabled ?? true;
+        this.desc = desc ?? "";
+        this.value = value ?? null;
     }
 }
 

@@ -4,7 +4,7 @@ import Resources from "../common/resources.js";
 import Define from "../common/define.js";
 import Util from "../common/utils.js";
 import {useModel} from "../controller/UseModel.js";
-import {appModel, MarkerModel, CongestionModel} from "../model/AppModel.js";
+import {appModel, MarkerModel, CongestionModel, MenuButtonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip, SEIconButton} from "../widgets/widgets.js";
 import {Refresh} from "@mui/icons-material";
@@ -22,7 +22,27 @@ const _naverMap = window.naver,
         [`${_mapOptionKeys.MAP_DATA_CONTROL}`]: Define.MAP_DATA_CONTROL,
         [`${_mapOptionKeys.ZOOM}`]: Define.ZOOM,
         [`${_mapOptionKeys.SCALE_CONTROL}`]: Define.SCALE_CONTROL
-    };
+    },
+    _congestionButtonValues = Constants.CONGESTION_BUTTON_VALUES,
+    _defaultButtonGroup = [
+        _congestionButtonValues.SET_CONGESTION,
+        _congestionButtonValues.WALKING_DISTANCE,
+        _congestionButtonValues.FIND_SHELTER,
+        _congestionButtonValues.RECOMMEND_EXIT
+    ],
+    _menuButtonGroup = {
+        [`${Constants.STATUS_TYPE.NONE}`]: _defaultButtonGroup,
+        [`${Constants.STATUS_TYPE.CONGESTION_SETTING}`]: [
+            _congestionButtonValues.CANCEL_CONGESTION_SETTING,
+            _congestionButtonValues.SET_EXIT
+        ],
+        [`${Constants.STATUS_TYPE.EXIT_SETTING}`]: [
+            _congestionButtonValues.RESET_EXIT,
+            _congestionButtonValues.FINISH_EXIT
+        ],
+        [`${Constants.STATUS_TYPE.CONGESTION_SELECTED}`]: _defaultButtonGroup,
+        [`${Constants.STATUS_TYPE.EXIT_SELECTED}`]: _defaultButtonGroup
+};
 
 const DocumentView = () => {
     return (
@@ -220,19 +240,56 @@ const HomeSideBarView = () => {
 };
 
 const CongestionSideBarView = () => {
+    const status = useModel(appModel, "status"),
+        [buttonList, setButtonList] = useState([]);
+
+    useEffect(() => {
+        const buttonModels = [];
+
+        for (const [key, value] of Object.entries(_congestionButtonValues)) {
+            const model = new MenuButtonModel({
+                desc: Resources[key],
+                value
+            });
+
+            buttonModels.push(model);
+            buttonList.push(
+                <CongestionMenuButton model={model}/>
+            );
+        }
+
+        appModel.setValue("menuButtonModels", buttonModels);
+        setButtonList(buttonList);
+    }, []);
+
+    useEffect(() => {
+        if (status) {
+            for (const model of appModel.menuButtonModels) {
+                const menuButtonGroup = _menuButtonGroup[status];
+
+                if (menuButtonGroup) {
+                    const isVisible = (menuButtonGroup.indexOf(model.value) !== -1);
+
+                    if (model.isVisible !== isVisible) {
+                        model.setValue("isVisible", isVisible);
+                    }
+                }
+            }
+        }
+    }, [status]);
+
+    return buttonList;
+};
+
+const CongestionMenuButton = (props) => {
+    const {model} = props,
+        isVisible = useModel(model, "isVisible"),
+        isDisabled = useModel(model, "isDisabled");
+
     function _onClick(e) {}
 
     return (
-        <>
-            <SETextButton desc={Resources.SET_CONGESTION_AREA} isDisabled={false}/>
-            <SETextButton desc={Resources.CALC_WALKING_DISTANCE} isDisabled={false}/>
-            <SETextButton desc={Resources.FIND_NEARBY_SHELTER} isDisabled={false}/>
-            <SETextButton desc={Resources.RECOMMEND_EXIT} isDisabled={false}/>
-            <SETextButton desc={Resources.CANCEL_CONGESTION_AREA} isDisabled={false}/>
-            <SETextButton desc={Resources.SET_EXIT} isDisabled={false}/>
-            <SETextButton desc={Resources.RESET_EXIT} isDisabled={false}/>
-            <SETextButton desc={Resources.FINISH_EXIT} isDisabled={false}/>
-        </>
+        <SETextButton key={model.value} desc={model.desc} isDisabled={isDisabled} isVisible={isVisible}/>
     );
 };
 

@@ -74,10 +74,15 @@ export const SETextButton = (props) => {
         title = "",
         desc = "",
         isDisabled = false,
-        className, onClick
+        isVisible = false,
+        className, onClick, value
     } = props;
     let orgClassName = _widgetNames.TEXT_BUTTON,
         titleEl, descEl;
+
+    if (!isVisible) {
+        return null;
+    }
 
     if (title) {
         titleEl = <SEText className={Constants.SUBTITLE_CLASS} desc={title}/>;
@@ -93,7 +98,7 @@ export const SETextButton = (props) => {
 
     return (
         <div className={_extendClassName(orgClassName, className)}>
-            <ButtonBase onClick={onClick} disabled={isDisabled}>
+            <ButtonBase onClick={onClick} disabled={isDisabled} value={value}>
                 <Box>
                     {titleEl}
                     {descEl}

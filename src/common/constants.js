@@ -84,6 +84,23 @@ const Constants = {
         NORMAL: "normal",
         CROWDED: "crowded",
         VERY_CROWDED: "very_crowded"
+    },
+    STATUS_TYPE: {
+        NONE: "none",
+        CONGESTION_SETTING: "congestion_setting",
+        EXIT_SETTING: "exit_setting",
+        CONGESTION_SELECTED: "congestion_selected" ,
+        EXIT_SELECTED: "exit_selected"
+    },
+    CONGESTION_BUTTON_VALUES: {
+        SET_CONGESTION: "congestion_setting",
+        WALKING_DISTANCE: "walking_distance",
+        FIND_SHELTER: "find_shelter",
+        RECOMMEND_EXIT: "recommend_exit",
+        CANCEL_CONGESTION_SETTING: "cancel_congestion_setting",
+        SET_EXIT: "set_exit",
+        RESET_EXIT: "reset_exit",
+        FINISH_EXIT: "finish_exit"
     }
 };
 
