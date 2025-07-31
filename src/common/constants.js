@@ -19,7 +19,8 @@ const Constants = {
         TAB_PANEL: "tab_panel",
         TEXT: "text",
         IMAGE: "image",
-        MAP_TOOLTIP: "map_tooltip"
+        MAP_TOOLTIP: "map_tooltip",
+        MESSAGE_BAR: "message_bar"
     },
 
     /* MENU NAMES */
@@ -59,6 +60,7 @@ const Constants = {
     MAP_TOOLTIP_CONTENT: "map_tooltip_content",
     SHELTER_LIST_CLASS: "shelter_list",
     REFRESH_BTN_CLASS: "refresh_btn",
+    CONGESTION_MENU_AREA_CLASS: "congestion_menu_area",
 
     /* ID */
     MAP_AREA_ID: "map_area",

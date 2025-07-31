@@ -6,7 +6,7 @@ import Util from "../common/utils.js";
 import {useModel} from "../controller/UseModel.js";
 import {appModel, MarkerModel, CongestionModel, MenuButtonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
-import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip, SEIconButton} from "../widgets/widgets.js";
+import {SETextButton, SEImageButton, SETab, SEText, SEImage, SEMapTooltip, SEIconButton, SEMessageBar} from "../widgets/widgets.js";
 import {Refresh} from "@mui/icons-material";
 
 const _naverMap = window.naver,
@@ -30,18 +30,19 @@ const _naverMap = window.naver,
         _congestionButtonValues.FIND_SHELTER,
         _congestionButtonValues.RECOMMEND_EXIT
     ],
+    _statusType = Constants.STATUS_TYPE,
     _menuButtonGroup = {
-        [`${Constants.STATUS_TYPE.NONE}`]: _defaultButtonGroup,
-        [`${Constants.STATUS_TYPE.CONGESTION_SETTING}`]: [
+        [`${_statusType.NONE}`]: _defaultButtonGroup,
+        [`${_statusType.CONGESTION_SETTING}`]: [
             _congestionButtonValues.CANCEL_CONGESTION_SETTING,
             _congestionButtonValues.SET_EXIT
         ],
-        [`${Constants.STATUS_TYPE.EXIT_SETTING}`]: [
+        [`${_statusType.EXIT_SETTING}`]: [
             _congestionButtonValues.RESET_EXIT,
             _congestionButtonValues.FINISH_EXIT
         ],
-        [`${Constants.STATUS_TYPE.CONGESTION_SELECTED}`]: _defaultButtonGroup,
-        [`${Constants.STATUS_TYPE.EXIT_SELECTED}`]: _defaultButtonGroup
+        [`${_statusType.CONGESTION_SELECTED}`]: _defaultButtonGroup,
+        [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup
 };
 
 const DocumentView = () => {
@@ -61,12 +62,12 @@ const MenuBarView = () => {
         {
             name: _menuNames.HOME,
             image: `${Constants.IMAGE_URL}home.svg`,
-            panel: <SideBarView name={_menuNames.HOME}/>
+            panel: <HomeSideBarView/>
         },
         {
             name: _menuNames.CONGESTION,
             image: `${Constants.IMAGE_URL}congestion.svg`,
-            panel: <SideBarView name={_menuNames.CONGESTION}/>
+            panel: <CongestionSideBarView/>
         }
     ];
 
@@ -124,18 +125,6 @@ const MapAreaView = (props) => {
             <MarkerTooltipView/>
             {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>}
                                                 desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
-        </div>
-    );
-};
-
-const SideBarView = (props) => {
-    const {name} = props;
-
-    return (
-        <div className={`${name} ${_viewNames.SIDE_BAR}`}>
-            {name === _menuNames.HOME ?
-                <HomeSideBarView/> :
-                <CongestionSideBarView/>}
         </div>
     );
 };
@@ -228,14 +217,14 @@ const HomeSideBarView = () => {
     }, [map]);
 
     return (
-        <>
+        <div className={`${_menuNames.HOME} ${_viewNames.SIDE_BAR}`}>
             <SEImage image={`${Constants.IMAGE_URL}shelter.svg`}/>
             <SEText className={Constants.TITLE_CLASS} desc={Resources.NEARBY_SHELTER} color={Constants.COLORS.RED}/>
             <SEText className={Constants.SUBTITLE_CLASS} desc="강북구 삼각산로"/> {/** TODO: 테스트용 */}
             <div className={Constants.SHELTER_LIST_CLASS}>
                 {shelterBtnList}
             </div>
-        </>
+        </div>
     );
 };
 
@@ -254,7 +243,7 @@ const CongestionSideBarView = () => {
 
             buttonModels.push(model);
             buttonList.push(
-                <CongestionMenuButton model={model}/>
+                <CongestionMenuButton model={model} isDisable/>
             );
         }
 
@@ -268,28 +257,92 @@ const CongestionSideBarView = () => {
                 const menuButtonGroup = _menuButtonGroup[status];
 
                 if (menuButtonGroup) {
-                    const isVisible = (menuButtonGroup.indexOf(model.value) !== -1);
+                    const value = model.value,
+                        isVisible = (menuButtonGroup.indexOf(value) !== -1);
 
                     if (model.isVisible !== isVisible) {
                         model.setValue("isVisible", isVisible);
+                    }
+
+                    if (isVisible) {
+                        const targetModels = [];
+
+                        switch (status) {
+                            case _statusType.NONE:
+                            default:
+                                if (value === _congestionButtonValues.SET_CONGESTION) {
+                                    targetModels.push(model);
+                                }
+                                break;
+                        }
+
+                        if (targetModels.length > 0) {
+                            for (const targetModel of targetModels) {
+                                if (model.isDisabled) {
+                                    targetModel.setValue("isDisabled", false);
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }, [status]);
 
-    return buttonList;
+    return (
+        <div className={Constants.CONGESTION_MENU_AREA_CLASS}>
+            <SEMessageBar desc={"test test test test test"}/>
+            <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`}>
+                {buttonList}
+            </div>
+        </div>
+    );
 };
 
 const CongestionMenuButton = (props) => {
     const {model} = props,
-        isVisible = useModel(model, "isVisible"),
-        isDisabled = useModel(model, "isDisabled");
+        {value, desc} = model,
+        isVisible = useModel(model, "isVisible") ?? false,
+        isDisabled = useModel(model, "isDisabled") ?? true;
 
-    function _onClick(e) {}
+    function _onClick(e) {
+        switch (value) {
+            // 혼잡 지역 설정하기
+            case _congestionButtonValues.SET_CONGESTION:
+                break;
+
+            // 도보 거리 계산
+            case _congestionButtonValues.WALKING_DISTANCE:
+                break;
+
+            // 가까운 대피소 찾기
+            case _congestionButtonValues.FIND_SHELTER:
+                break;
+
+            // 비상구 추천
+            case _congestionButtonValues.RECOMMEND_EXIT:
+                break;
+
+            // 혼잡 지역 취소
+            case _congestionButtonValues.CANCEL_CONGESTION_SETTING:
+                break;
+
+            // 비상구 설정하기
+            case _congestionButtonValues.SET_EXIT:
+                break;
+
+            // 비상구 초기화
+            case _congestionButtonValues.RESET_EXIT:
+                break;
+
+            // 비상구 설정 완료
+            case _congestionButtonValues.FINISH_EXIT:
+                break;
+        }
+    }
 
     return (
-        <SETextButton key={model.value} desc={model.desc} isDisabled={isDisabled} isVisible={isVisible}/>
+        <SETextButton key={value} desc={desc} isDisabled={isDisabled} isVisible={isVisible} onClick={_onClick}/>
     );
 };
 

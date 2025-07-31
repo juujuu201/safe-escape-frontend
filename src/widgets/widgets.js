@@ -74,7 +74,7 @@ export const SETextButton = (props) => {
         title = "",
         desc = "",
         isDisabled = false,
-        isVisible = false,
+        isVisible = true,
         className, onClick, value
     } = props;
     let orgClassName = _widgetNames.TEXT_BUTTON,
@@ -223,7 +223,10 @@ export const SEText = (props) => {
 };
 
 export const SEMapTooltip = (props) => {
-    const {image, isOpen, title, desc, className, onClose, style} = props;
+    const {
+        isOpen = false,
+        image, title, desc, className, onClose, style
+    } = props;
     let styleObj;
 
     function _onClose() {
@@ -252,6 +255,17 @@ export const SEMapTooltip = (props) => {
                     {desc && <SEText className={Constants.DESCRIPTION_CLASS} desc={desc}/>}
                 </div>
             </div>
+        </div>
+    );
+};
+
+export const SEMessageBar = (props) => {
+    const {desc, buttonDesc, onButtonClick, className} = props;
+
+    return (
+        <div className={_extendClassName(_widgetNames.MESSAGE_BAR, className)}>
+            <SEText desc={desc} color={Constants.COLORS.WHITE} size="h5"/>
+            {buttonDesc && <SETextButton desc={buttonDesc} onClick={onButtonClick}/>}
         </div>
     );
 };
