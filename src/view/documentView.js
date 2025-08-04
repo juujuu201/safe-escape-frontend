@@ -43,22 +43,27 @@ const _naverMap = window.naver,
         ],
         [`${_statusType.CONGESTION_SELECTED}`]: _defaultButtonGroup,
         [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup
-};
+    },
+    _themeColor = Constants.COLORS.THEME,
+    _mapMoveEnableOptions = Define.MAP_MOVE_ENABLE_OPTIONS;
 
 const DocumentView = () => {
+    const [tabValue, setTabValue] = useState(_menuNames.HOME);
+
     return (
         <div className={_viewNames.DOCUMENT}>
-            <MenuBarView/>
-            <div className={_viewNames.CONTENTS_AREA}>
+            <MenuBarView setTabValue={setTabValue}/>
+            <div className={`${_viewNames.CONTENTS_AREA} ${tabValue}`}>
                 <TitleBarView/>
-                <MapAreaView name={_menuNames.HOME}/>
+                <MapAreaView tabValue={tabValue}/>
             </div>
         </div>
     );
 };
 
-const MenuBarView = () => {
-    const tabInfoList = [
+const MenuBarView = (props) => {
+    const {setTabValue} = props,
+        tabInfoList = [
         {
             name: _menuNames.HOME,
             image: `${Constants.IMAGE_URL}home.svg`,
@@ -75,10 +80,18 @@ const MenuBarView = () => {
 
     }
 
+    function _onChange(e, tabName) {
+        if (appModel.status === _statusType.CONGESTION_SETTING) {
+            return true;
+        }
+
+        setTabValue(tabName);
+    }
+
     return (
         <div className={_viewNames.MENU_BAR}>
             <SEImageButton className={Constants.LOGO_TAB_BUTTON} image={`${Constants.IMAGE_URL}logo.svg`} onClick={_onClick}/>
-            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME} descVisible={true}/>
+            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME} descVisible={true} onChange={_onChange}/>
         </div>
     );
 };
@@ -92,12 +105,14 @@ const TitleBarView = () => {
 };
 
 const MapAreaView = (props) => {
-    const centerModel = useModel(appModel, "centerModel"),
-        refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled");
+    const {tabValue} = props,
+        centerModel = useModel(appModel, "centerModel"),
+        refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
+        status = useModel(appModel, "status"),
+        polygon = useModel(appModel, "selectedPolygon"),
+        map = appModel.map;
 
     function _onClickRefresh() {
-        const map = appModel.map;
-
         if (map) {
             const centerPos = map.getCenter();
 
@@ -113,15 +128,73 @@ const MapAreaView = (props) => {
         }
     }
 
+    function _onSelectCongestionArea(e) {
+        const tempMarkerModels = appModel.tempMarkerModels,
+            tempLen = tempMarkerModels.length;
+        let markerModel, newTempMarkerModels, settingCancelButton;
+
+        if (tempLen >= Constants.MAX_CONGESTION_MARKER) {
+            return;
+        }
+
+        markerModel = new MarkerModel({
+            position: e.coord,
+            icon: `${Constants.IMAGE_URL}tempMarker.svg`,
+            map,
+            naverMap: _naverMap
+        });
+        markerModel.show();
+
+        newTempMarkerModels = [...appModel.tempMarkerModels, markerModel];
+        appModel.setValue("tempMarkerModels", newTempMarkerModels);
+
+        if (polygon) {
+            polygon.setMap(null);
+        }
+
+        // 1개 이상 선택된 경우 '혼잡 지역 취소' 버튼 활성화
+        settingCancelButton = appModel.menuButtonModels.find(model => model.value === _congestionButtonValues.CANCEL_CONGESTION_SETTING);
+
+        if (settingCancelButton && settingCancelButton.isDisabled) {
+            settingCancelButton.setValue("isDisabled", false);
+        }
+
+        // 2개 이상 선택된 경우 polygon 표시
+        if (tempLen >= 1) {
+            const pathList = newTempMarkerModels.map(model => model.position);
+
+            if (pathList) {
+                appModel.setValue("selectedPolygon",
+                    new _naverMap.maps.Polygon({
+                        paths: Util.sortPointsClockwise(pathList),
+                        strokeColor: _themeColor,
+                        fillColor: _themeColor,
+                        fillOpacity: 0.2,
+                        map: appModel.map
+                    }));
+            }
+        }
+    }
+
     useEffect(() => {
         if (centerModel) {
             centerModel.show(true);
         }
     }, [centerModel]);
 
+    useEffect(() => {
+        if (tabValue === _menuNames.CONGESTION && status === _statusType.CONGESTION_SETTING) {
+            const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onSelectCongestionArea);
+
+            return () => {
+                _naverMap.maps.Event.removeListener(clickListener);
+            };
+        }
+    }, [status, polygon]);
+
     return (
         <div className={_viewNames.MAP_AREA}>
-            <Map showTooltip={true}/>
+            <Map showTooltip={true} tabValue={tabValue}/>
             <MarkerTooltipView/>
             {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>}
                                                 desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
@@ -242,56 +315,55 @@ const CongestionSideBarView = () => {
             });
 
             buttonModels.push(model);
-            buttonList.push(
-                <CongestionMenuButton model={model} isDisable/>
-            );
         }
 
         appModel.setValue("menuButtonModels", buttonModels);
-        setButtonList(buttonList);
     }, []);
 
     useEffect(() => {
-        if (status) {
+        const menuButtonGroup = _menuButtonGroup[status];
+
+        if (status && menuButtonGroup) {
+            const buttonList = [];
+
             for (const model of appModel.menuButtonModels) {
-                const menuButtonGroup = _menuButtonGroup[status];
+                const value = model.value,
+                    isVisible = (menuButtonGroup.indexOf(value) !== -1);
+                let isDisable = true;
 
-                if (menuButtonGroup) {
-                    const value = model.value,
-                        isVisible = (menuButtonGroup.indexOf(value) !== -1);
+                if (model.isVisible !== isVisible) {
+                    model.setValue("isVisible", isVisible);
+                }
 
-                    if (model.isVisible !== isVisible) {
-                        model.setValue("isVisible", isVisible);
-                    }
-
-                    if (isVisible) {
-                        const targetModels = [];
-
-                        switch (status) {
-                            case _statusType.NONE:
-                            default:
-                                if (value === _congestionButtonValues.SET_CONGESTION) {
-                                    targetModels.push(model);
-                                }
-                                break;
-                        }
-
-                        if (targetModels.length > 0) {
-                            for (const targetModel of targetModels) {
-                                if (model.isDisabled) {
-                                    targetModel.setValue("isDisabled", false);
-                                }
+                if (isVisible) {
+                    switch(status) {
+                        case _statusType.CONGESTION_SETTING:
+                            if (value === _congestionButtonValues.CANCEL_CONGESTION_SETTING) {
+                                isDisable = false;
                             }
-                        }
+                            break;
+                        case _statusType.NONE:
+                            if (value === _congestionButtonValues.SET_CONGESTION) {
+                                isDisable = false;
+                            }
+                            break;
                     }
+
+                    if (model.isDisabled !== isDisable) {
+                        model.setValue("isDisabled", isDisable);
+                    }
+
+                    buttonList.push(<CongestionMenuButton model={model}/>);
                 }
             }
+
+            setButtonList(buttonList);
         }
     }, [status]);
 
     return (
         <div className={Constants.CONGESTION_MENU_AREA_CLASS}>
-            <SEMessageBar desc={"test test test test test"}/>
+            <SEMessageBar desc={Resources.SETTING_CONGESTION_AREA} isVisible={status === Constants.STATUS_TYPE.CONGESTION_SETTING}/>
             <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`}>
                 {buttonList}
             </div>
@@ -302,13 +374,36 @@ const CongestionSideBarView = () => {
 const CongestionMenuButton = (props) => {
     const {model} = props,
         {value, desc} = model,
-        isVisible = useModel(model, "isVisible") ?? false,
-        isDisabled = useModel(model, "isDisabled") ?? true;
+        map = useModel(appModel, "map"),
+        isVisible = model.isVisible ?? false,
+        isDisabled = model.isDisabled ?? true;
 
     function _onClick(e) {
+        let status;
+
         switch (value) {
             // 혼잡 지역 설정하기
             case _congestionButtonValues.SET_CONGESTION:
+                status = _statusType.CONGESTION_SETTING;
+
+                // 혼잡 지역을 설정하는 동안 지도를 움직이지 못하도록 설정한다.
+                if (map) {
+                    const mapOptions = Object.fromEntries(
+                        Object.entries(_mapMoveEnableOptions).map(([key, value]) => [key, !value])
+                    );
+
+                    if (!Util.isEmptyObject(mapOptions)) {
+                        map.setOptions(mapOptions);
+                    }
+                }
+
+                // 마커 툴팁이 열려있었다면 닫는다.
+                AppController.closeMapTooltip();
+                break;
+
+            // 혼잡 지역 취소
+            case _congestionButtonValues.CANCEL_CONGESTION_SETTING:
+                AppController.cancelCongestionSetting(map);
                 break;
 
             // 도보 거리 계산
@@ -323,10 +418,6 @@ const CongestionMenuButton = (props) => {
             case _congestionButtonValues.RECOMMEND_EXIT:
                 break;
 
-            // 혼잡 지역 취소
-            case _congestionButtonValues.CANCEL_CONGESTION_SETTING:
-                break;
-
             // 비상구 설정하기
             case _congestionButtonValues.SET_EXIT:
                 break;
@@ -339,16 +430,22 @@ const CongestionMenuButton = (props) => {
             case _congestionButtonValues.FINISH_EXIT:
                 break;
         }
+
+        if (status) {
+            appModel.setValue("status", status);
+        }
     }
 
     return (
-        <SETextButton key={value} desc={desc} isDisabled={isDisabled} isVisible={isVisible} onClick={_onClick}/>
+        <SETextButton desc={desc} isDisabled={isDisabled} isVisible={isVisible} onClick={_onClick}/>
     );
 };
 
 const Map = (props) => {
-    const {options} = props,
-        mapRef = useRef(null);
+    const {options, tabValue} = props,
+        status = useModel(appModel, "status"),
+        mapRef = useRef(null),
+        classList = [tabValue];
 
     useEffect(() => {
         const mapOptions = {..._defaultMapOptions, ...options},
@@ -361,7 +458,11 @@ const Map = (props) => {
         mapRef.current = mapObj;
     }, []);
 
-    return <div id={Constants.MAP_AREA_ID}/>;
+    if (status === _statusType.CONGESTION_SETTING) {
+        classList.push(Constants.SELECTING_CLASS);
+    }
+
+    return <div id={Constants.MAP_AREA_ID} className={classList.join(" ")}/>;
 };
 
 const MarkerTooltipView = () => {

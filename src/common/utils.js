@@ -36,6 +36,12 @@ export default class Util {
         return result;
     }
 
+    /**
+     * 두 좌표 간 직선 거리를 계산한다.
+     * @param {Object} coord1
+     * @param {Object} coord2
+     * @returns {Number}
+     */
     static getDistanceBetweenCoord(coord1, coord2) {
         if (!(coord1 && coord2)) {
             return null;
@@ -62,5 +68,36 @@ export default class Util {
         }
 
         return result;
+    }
+
+    /**
+     * 중심점을 기준으로 각도 값을 정렬한 배열을 반환한다.
+     * @param {Array} points            - 각도 값 배열
+     * @returns {Array}
+     */
+    static sortPointsClockwise(points) {
+        if (points.length < 3) {
+            return points;
+        }
+
+        const len = points.length;
+        let latSum = 0,
+            lngSum = 0,
+            centerLat, centerLng;
+
+        for (const point of points) {
+            latSum += point.lat();
+            lngSum += point.lng();
+        }
+
+        centerLat = latSum / len;
+        centerLng = lngSum / len;
+
+        return [...points].sort((firstPoint, secondPoint) => {
+            const firstAngle = Math.atan2(firstPoint.lat() - centerLat, firstPoint.lng() - centerLng),
+                secondAngle = Math.atan2(secondPoint.lat() - centerLat, secondPoint.lng() - centerLng);
+
+            return firstAngle - secondAngle;
+        });
     }
 }

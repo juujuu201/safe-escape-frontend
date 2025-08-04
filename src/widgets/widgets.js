@@ -130,7 +130,10 @@ export const SEIconButton = (props) => {
 };
 
 export const SETab = (props) => {
-    const {tabInfoList, direction, defaultTab, descVisible = false, className = []} = props,
+    const {
+            descVisible = false,
+            tabInfoList, direction, defaultTab, className, onChange
+        } = props,
         tabNameList = tabInfoList.map(tab => tab.name),
         [curTabIdx, setTabIdx] = useState(tabNameList.indexOf(defaultTab) ?? -1),
         tabList = [];
@@ -178,6 +181,16 @@ export const SETab = (props) => {
     }
 
     function _handleChange(e, curIdx) {
+        let isStopEvent = false;
+
+        if (onChange) {
+            isStopEvent = onChange(e, tabNameList[curIdx]);
+        }
+
+        if (isStopEvent) {
+            return;
+        }
+
         setTabIdx(curIdx);
     }
 
@@ -260,11 +273,19 @@ export const SEMapTooltip = (props) => {
 };
 
 export const SEMessageBar = (props) => {
-    const {desc, buttonDesc, onButtonClick, className} = props;
+    const {
+            isVisible = false,
+            desc, buttonDesc, onButtonClick, className
+        } = props,
+        classList = _getClassList(className) || [];
+
+    if (!isVisible) {
+        classList.push(Constants.INVISIBLE_CLASS);
+    }
 
     return (
-        <div className={_extendClassName(_widgetNames.MESSAGE_BAR, className)}>
-            <SEText desc={desc} color={Constants.COLORS.WHITE} size="h5"/>
+        <div className={_extendClassName(_widgetNames.MESSAGE_BAR, classList)}>
+            <SEText desc={desc} color={Constants.COLORS.WHITE} size="h6"/>
             {buttonDesc && <SETextButton desc={buttonDesc} onClick={onButtonClick}/>}
         </div>
     );

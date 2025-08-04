@@ -6,7 +6,8 @@ import AppController from "../controller/AppController.js";
 
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
-    _defaultZoomValue = Define.ZOOM;
+    _defaultZoomValue = Define.ZOOM,
+    _settingStatus = Constants.STATUS_TYPE.CONGESTION_SETTING;
 
 class Model {
     constructor() {
@@ -39,6 +40,8 @@ class AppModel extends Model {
 
         this.status = Constants.STATUS_TYPE.NONE;
         this.menuButtonModels = [];
+        this.tempMarkerModels = [];
+        this.selectedPolygon = null;
     }
 
     removeMarker(model) {
@@ -135,20 +138,24 @@ export class MarkerModel extends Model {
             return;
         }
 
+        // [marker] click
         this.naverMap.maps.Event.addListener(this.marker, "click", e => {
-            this.setBgColor();
+            if (appModel.status !== _settingStatus) {
+                this.setBgColor();
 
-            if (this.selectState !== "click") {
-                this.setValue("selectState", "click");
-            }
+                if (this.selectState !== "click") {
+                    this.setValue("selectState", "click");
+                }
 
-            if (this.onClick) {
-                this.onClick(e, this);
+                if (this.onClick) {
+                    this.onClick(e, this);
+                }
             }
         });
 
+        // [marker] mouseover
         this.naverMap.maps.Event.addListener(this.marker, "mouseover", e => {
-            if (this.selectState !== "click") {
+            if (appModel.status !== _settingStatus && this.selectState !== "click") {
                 this.setBgColor();
                 this.setValue("selectState", "hover");
 
@@ -158,8 +165,9 @@ export class MarkerModel extends Model {
             }
         });
 
+        // [marker] mouseout
         this.naverMap.maps.Event.addListener(this.marker, "mouseout", e => {
-            if (this.selectState !== "click") {
+            if (appModel.status !== _settingStatus && this.selectState !== "click") {
                 this.deSelect();
 
                 if (this.onMouseOut) {
@@ -168,6 +176,7 @@ export class MarkerModel extends Model {
             }
         });
 
+        // [map] center_changed
         this.naverMap.maps.Event.addListener(this.map, "center_changed", () => {
             const centerModel = appModel.getValue("centerModel"),
                 markerTooltipModel = appModel.getValue("markerTooltipModel");
@@ -215,16 +224,18 @@ export class MarkerModel extends Model {
                     scaledSize: new this.naverMap.maps.Size(this.iconSize, this.iconSize)
                 },
             });
+
             this.element = this.marker.eventTarget;
+            this.element.setAttribute("id", Constants.MARKER_ID);
 
             this.attachEvents();
             this.marker.setPosition(this.position);
 
-            if (this.map.getZoom() !== _defaultZoomValue) {
-                this.map.setOptions("zoom", _defaultZoomValue);
-            }
-
             if (isCenter) {
+                if (this.map.getZoom() !== _defaultZoomValue) {
+                    this.map.setOptions("zoom", _defaultZoomValue);
+                }
+
                 this.map.setCenter(this.position);
                 appModel.setValue("centerModel", this);
             }

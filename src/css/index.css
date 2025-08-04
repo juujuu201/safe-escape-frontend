@@ -12,6 +12,7 @@
   --title-bar-height: 60px;
   --menu-bar-width: 60px;
   --side_bar_width: 300px;
+  --refresh-button-width: 110px;
 
   --border-radius: 10px;
 }
@@ -52,6 +53,7 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .map_tooltip .map_tooltip_content div:not(.image) {flex: 1;}
 
 .message_bar {position: absolute; top: 15px; left: calc(5% / 2); width: calc(95% - 20px); max-height: 100px; background-color: var(--theme-color); opacity: 0.8; border-radius: var(--border-radius); z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;}
+.message_bar.invisible {display: none;}
 .message_bar .text,
 .message_bar .text_button {width: fit-content;}
 .message_bar .text_button {background-color: var(--white); color: var(--theme-color); margin: 10px 0 0;}
@@ -70,17 +72,21 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .side_bar.home .text_button .MuiBox-root {width: 100%; height: 100%;}
 .side_bar.home .shelter_list {flex: 1; overflow-y: auto;}
 
-.side_bar.congestion {position: absolute; right: 16px; top: 16px; width: 200px; background: var(--bg-color);}
+.side_bar.congestion {position: absolute; right: 16px; width: 200px; background: var(--bg-color);}
 .side_bar.congestion .text_button {background-color: var(--theme-color); border-radius: 12px; cursor: pointer;}
 .side_bar.congestion .text_button .MuiBox-root {padding: 10px;}
 .side_bar.congestion .text_button .text .MuiTypography-root {color: var(--white); font-weight: 400;}
 .side_bar.congestion .text_button.disabled {cursor: not-allowed;}
 
 .contents_area #map_area {width: 100%; height: 100%;}
-.contents_area .refresh_btn {position: absolute; bottom: 20px; left: calc((100% - (var(--menu-bar-width) + var(--side_bar_width))) / 2); display: flex; flex-direction: row; width: 110px; height: 45px; border-radius: 22px; background-color: var(--black); opacity: 60%; color: white; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.15) 0 0 7px 0;}
+.contents_area.congestion #map_area.selecting div {cursor: crosshair;}
+.contents_area.congestion #map_area.selecting img#marker {cursor: not-allowed !important;}
+.contents_area .refresh_btn {position: absolute; bottom: 20px; left: calc((100% - (var(--menu-bar-width) + var(--side_bar_width))) / 2 - var(--refresh-button-width) / 2); display: flex; flex-direction: row; width: var(--refresh-button-width); height: 45px; border-radius: 22px; background-color: var(--black); opacity: 60%; color: white; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.15) 0 0 7px 0;}
 .contents_area .refresh_btn .MuiButtonBase-root {flex: 1; color: white;}
 .contents_area .refresh_btn div {flex: 2; align-content: center;}
+.contents_area.congestion .refresh_btn {left: calc(50% - var(--refresh-button-width) / 2);}
 
 .congestion_menu_area {position: absolute; top: 16px; left: 16px; width: calc(100% - 32px); display: flex; flex-direction: row;}
 .congestion_menu_area .message_bar {flex: 1; position: unset; margin-right: 16px; height: fit-content;}
-.congestion_menu_area .congestion.side_bar {position: unset;}
+.congestion_menu_area .side_bar.congestion {position: unset;}
+.congestion_menu_area .message_bar.invisible + .side_bar.congestion {position: absolute; right: 0;}

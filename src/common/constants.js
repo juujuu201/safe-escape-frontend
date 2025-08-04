@@ -52,6 +52,8 @@ const Constants = {
 
     /* CLASSES */
     DISABLED_CLASS: "disabled",
+    INVISIBLE_CLASS: "invisible",
+    SELECTING_CLASS: "selecting",
 
     LOGO_TAB_BUTTON: "logo_tab_button",
     MENU_TAB: "menu_tab",
@@ -65,6 +67,7 @@ const Constants = {
     /* ID */
     MAP_AREA_ID: "map_area",
     MARKER_BG_ID: "marker_bg",
+    MARKER_ID: "marker",
 
     /* MAP OPTION KEYS*/
     MAP_OPTION_KEYS: {
@@ -103,7 +106,8 @@ const Constants = {
         SET_EXIT: "set_exit",
         RESET_EXIT: "reset_exit",
         FINISH_EXIT: "finish_exit"
-    }
+    },
+    MAX_CONGESTION_MARKER: 10
 };
 
 export default Constants;
