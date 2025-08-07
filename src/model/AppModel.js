@@ -1,7 +1,7 @@
 import eventBus from "../controller/EventBus.js";
-import Constants from "../common/constants.js";
-import Define from "../common/define.js";
-import Util from "../common/utils.js";
+import Constants from "../common/Constants.js";
+import Define from "../common/Define.js";
+import Util from "../common/Utils.js";
 import AppController from "../controller/AppController.js";
 
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,

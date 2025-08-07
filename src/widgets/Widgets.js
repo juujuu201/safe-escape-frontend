@@ -1,7 +1,7 @@
 import {useState} from "react";
-import Constants from "../common/constants.js";
-import Resources from "../common/resources.js";
-import Util from "../common/utils.js";
+import Constants from "../common/Constants.js";
+import Resources from "../common/Resources.js";
+import Util from "../common/Utils.js";
 import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography} from "@mui/material";
 import {Close} from "@mui/icons-material";
 

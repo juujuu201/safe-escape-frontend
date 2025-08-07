@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./css/index.css";
-import DocumentView from "./view/documentView.js";
+import DocumentView from "./view/DocumentView.js";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

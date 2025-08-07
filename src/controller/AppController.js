@@ -1,6 +1,6 @@
 import {appModel} from "../model/AppModel.js";
-import Define from "../common/define.js";
-import Constants from "../common/constants.js";
+import Define from "../common/Define.js";
+import Constants from "../common/Constants.js";
 
 export default class Util {
     static closeMapTooltip(centerModel = appModel.centerModel) {

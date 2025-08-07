@@ -1,4 +1,4 @@
-import Constants from "./constants.js";
+import Constants from "./Constants.js";
 
 export default class Util {
     /**
