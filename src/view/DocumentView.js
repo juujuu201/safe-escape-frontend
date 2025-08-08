@@ -35,11 +35,13 @@ const _naverMap = window.naver,
         [`${_statusType.NONE}`]: _defaultButtonGroup,
         [`${_statusType.CONGESTION_SETTING}`]: [
             _congestionButtonValues.CANCEL_CONGESTION_SETTING,
-            _congestionButtonValues.SET_EXIT
+            _congestionButtonValues.SET_EXIT,
+            _congestionButtonValues.STOP_CONGESTION_SETTING
         ],
         [`${_statusType.EXIT_SETTING}`]: [
             _congestionButtonValues.RESET_EXIT,
-            _congestionButtonValues.FINISH_EXIT
+            _congestionButtonValues.FINISH_EXIT,
+            _congestionButtonValues.STOP_CONGESTION_SETTING
         ],
         [`${_statusType.CONGESTION_SELECTED}`]: _defaultButtonGroup,
         [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup
@@ -109,7 +111,9 @@ const MapAreaView = (props) => {
         centerModel = useModel(appModel, "centerModel"),
         refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
         status = useModel(appModel, "status"),
-        polygon = useModel(appModel, "selectedPolygon"),
+        polygon = useModel(appModel, "tempPolygonArea"),
+        tempEdgeModels = useModel(appModel, "tempEdgeModels"),
+        tempExitModels = useModel(appModel, "tempExitModels"),
         map = appModel.map;
 
     function _onClickRefresh() {
@@ -128,50 +132,64 @@ const MapAreaView = (props) => {
         }
     }
 
-    function _onSelectCongestionArea(e) {
-        const tempMarkerModels = appModel.tempMarkerModels,
-            tempLen = tempMarkerModels.length;
-        let markerModel, newTempMarkerModels, settingCancelButton;
+    function _onClickMap(e) {
+        const {coord} = e,
+            tempEdgeLen = tempEdgeModels.length;
+        let markerModel, newModels, pathList;
 
-        if (tempLen >= Constants.MAX_CONGESTION_MARKER) {
+        if (tempEdgeLen >= Constants.MAX_CONGESTION_MARKER) {
             return;
         }
 
-        markerModel = new MarkerModel({
-            position: e.coord,
-            icon: `${Constants.IMAGE_URL}tempMarker.svg`,
-            map,
-            naverMap: _naverMap
-        });
-        markerModel.show();
+        if (status === _statusType.CONGESTION_SETTING) {
+            markerModel = new MarkerModel({
+                naverMap: _naverMap,
+                hasMarker: false,
+                position: coord,
+                map
+            });
 
-        newTempMarkerModels = [...appModel.tempMarkerModels, markerModel];
-        appModel.setValue("tempMarkerModels", newTempMarkerModels);
+            newModels = [...appModel["tempEdgeModels"], markerModel];
+            appModel.setValue("tempEdgeModels", newModels);
+            markerModel.show();
 
-        if (polygon) {
-            polygon.setMap(null);
-        }
+            if (polygon) {
+                polygon.setMap(null);
+            }
 
-        // 1개 이상 선택된 경우 '혼잡 지역 취소' 버튼 활성화
-        settingCancelButton = appModel.menuButtonModels.find(model => model.value === _congestionButtonValues.CANCEL_CONGESTION_SETTING);
+            // 2개 이상 선택된 경우
+            if (newModels?.length > 1) {
+                pathList = newModels.map(model => model.position);
 
-        if (settingCancelButton && settingCancelButton.isDisabled) {
-            settingCancelButton.setValue("isDisabled", false);
-        }
+                // polygon 표시
+                if (pathList) {
+                    pathList = Util.sortPointsClockwise(pathList);
 
-        // 2개 이상 선택된 경우 polygon 표시
-        if (tempLen >= 1) {
-            const pathList = newTempMarkerModels.map(model => model.position);
+                    appModel.setValue("tempPolygonArea",
+                        new _naverMap.maps.Polygon({
+                            paths: Util.sortPointsClockwise(pathList),
+                            strokeColor: _themeColor,
+                            fillColor: _themeColor,
+                            fillOpacity: 0.2,
+                            map: appModel.map
+                        }));
+                }
+            }
+        } else if (status === _statusType.EXIT_SETTING) {
+            pathList = tempEdgeModels.map(model => model.position);
 
-            if (pathList) {
-                appModel.setValue("selectedPolygon",
-                    new _naverMap.maps.Polygon({
-                        paths: Util.sortPointsClockwise(pathList),
-                        strokeColor: _themeColor,
-                        fillColor: _themeColor,
-                        fillOpacity: 0.2,
-                        map: appModel.map
-                    }));
+            if (Util.isContainsCoord(coord, pathList)) {
+                markerModel = new MarkerModel({
+                    icon: `${Constants.IMAGE_URL}exit_marker.svg`,
+                    position: coord,
+                    naverMap: _naverMap,
+                    removable: true,
+                    map
+                });
+
+                newModels = [...appModel["tempExitModels"], markerModel];
+                appModel.setValue("tempExitModels", newModels);
+                markerModel.show();
             }
         }
     }
@@ -183,14 +201,37 @@ const MapAreaView = (props) => {
     }, [centerModel]);
 
     useEffect(() => {
-        if (tabValue === _menuNames.CONGESTION && status === _statusType.CONGESTION_SETTING) {
-            const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onSelectCongestionArea);
+        if (tabValue === _menuNames.CONGESTION
+            && (status === _statusType.CONGESTION_SETTING || status === _statusType.EXIT_SETTING)) {
+            const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onClickMap);
 
             return () => {
                 _naverMap.maps.Event.removeListener(clickListener);
             };
         }
-    }, [status, polygon]);
+    }, [status, polygon, tempEdgeModels]);
+
+    useEffect(() => {
+        if (tempEdgeModels) {
+            const setExitBtn = appModel.menuButtonModels.find(model => model.value === _congestionButtonValues.SET_EXIT);
+
+            // '비상구 설정하기' 버튼 활성화/비활성화
+            if (setExitBtn) {
+                setExitBtn.setValue("isDisabled", tempEdgeModels.length < 2);
+            }
+        }
+    }, [tempEdgeModels]);
+
+    useEffect(() => {
+        if (tempExitModels?.length > 0) {
+            const setFinishBtn = appModel.menuButtonModels.find(model => model.value === _congestionButtonValues.FINISH_EXIT);
+
+            // '비상구 설정 완료' 버튼 활성화/비활성화
+            if (setFinishBtn && setFinishBtn.isDisabled) {
+                setFinishBtn.setValue("isDisabled", false);
+            }
+        }
+    }, [tempExitModels]);
 
     return (
         <div className={_viewNames.MAP_AREA}>
@@ -303,7 +344,9 @@ const HomeSideBarView = () => {
 
 const CongestionSideBarView = () => {
     const status = useModel(appModel, "status"),
-        [buttonList, setButtonList] = useState([]);
+        messageValue = useModel(appModel, "messageValue"),
+        [visibleModels, setVisibleModels] = useState([]),
+        isMessageBarVisible = (status === Constants.STATUS_TYPE.CONGESTION_SETTING || status === Constants.STATUS_TYPE.EXIT_SETTING);
 
     useEffect(() => {
         const buttonModels = [];
@@ -324,12 +367,13 @@ const CongestionSideBarView = () => {
         const menuButtonGroup = _menuButtonGroup[status];
 
         if (status && menuButtonGroup) {
-            const buttonList = [];
+            const nextVisibleModels = [];
 
             for (const model of appModel.menuButtonModels) {
                 const value = model.value,
                     isVisible = (menuButtonGroup.indexOf(value) !== -1);
-                let isDisable = true;
+                let isDisable = true,
+                    messageValue;
 
                 if (model.isVisible !== isVisible) {
                     model.setValue("isVisible", isVisible);
@@ -341,6 +385,13 @@ const CongestionSideBarView = () => {
                             if (value === _congestionButtonValues.CANCEL_CONGESTION_SETTING) {
                                 isDisable = false;
                             }
+                            messageValue = Resources.SETTING_CONGESTION_AREA;
+                            break;
+                        case _statusType.EXIT_SETTING:
+                            if (value === _congestionButtonValues.RESET_EXIT) {
+                                isDisable = false;
+                            }
+                            messageValue = Resources.SETTING_EXIT;
                             break;
                         case _statusType.NONE:
                             if (value === _congestionButtonValues.SET_CONGESTION) {
@@ -349,23 +400,32 @@ const CongestionSideBarView = () => {
                             break;
                     }
 
+                    if (value === _congestionButtonValues.STOP_CONGESTION_SETTING) {
+                        isDisable = false;
+                    }
+
                     if (model.isDisabled !== isDisable) {
                         model.setValue("isDisabled", isDisable);
                     }
 
-                    buttonList.push(<CongestionMenuButton model={model}/>);
+                    if (messageValue) {
+                        appModel.setValue("messageValue", messageValue);
+                    }
+
+                    nextVisibleModels.push(model);
                 }
             }
 
-            setButtonList(buttonList);
+            setVisibleModels(nextVisibleModels);
         }
     }, [status]);
 
     return (
         <div className={Constants.CONGESTION_MENU_AREA_CLASS}>
-            <SEMessageBar desc={Resources.SETTING_CONGESTION_AREA} isVisible={status === Constants.STATUS_TYPE.CONGESTION_SETTING}/>
+            <SEMessageBar desc={messageValue} isVisible={isMessageBarVisible}/>
             <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`}>
-                {buttonList}
+                {visibleModels.map(model =>
+                    <CongestionMenuButton key={model.value} model={model}/>)}
             </div>
         </div>
     );
@@ -375,11 +435,12 @@ const CongestionMenuButton = (props) => {
     const {model} = props,
         {value, desc} = model,
         map = useModel(appModel, "map"),
-        isVisible = model.isVisible ?? false,
-        isDisabled = model.isDisabled ?? true;
+        isVisible = useModel(model, "isVisible"),
+        isDisabled = useModel(model, "isDisabled");
 
     function _onClick(e) {
-        let status;
+        let isEnableMap = false,
+            status;
 
         switch (value) {
             // 혼잡 지역 설정하기
@@ -401,7 +462,7 @@ const CongestionMenuButton = (props) => {
                 AppController.closeMapTooltip();
                 break;
 
-            // 혼잡 지역 취소
+            // 혼잡 지역 초기화
             case _congestionButtonValues.CANCEL_CONGESTION_SETTING:
                 AppController.cancelCongestionSetting(map);
                 break;
@@ -420,24 +481,45 @@ const CongestionMenuButton = (props) => {
 
             // 비상구 설정하기
             case _congestionButtonValues.SET_EXIT:
+                status = _statusType.EXIT_SETTING;
                 break;
 
             // 비상구 초기화
             case _congestionButtonValues.RESET_EXIT:
+                AppController.cancelExitSetting(map);
                 break;
 
             // 비상구 설정 완료
             case _congestionButtonValues.FINISH_EXIT:
+                isEnableMap = true;
+                AppController.cancelExitSetting(map);
+                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
+                break;
+
+            // 혼잡 지역 설정 취소
+            case _congestionButtonValues.STOP_CONGESTION_SETTING:
+                isEnableMap = true;
+                AppController.cancelCongestionSetting(map, true);
+                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
                 break;
         }
 
         if (status) {
             appModel.setValue("status", status);
         }
+
+        // 지도를 다시 움직일 수 있도록 설정한다.
+        if (isEnableMap) {
+            map.setOptions(Define.MAP_MOVE_ENABLE_OPTIONS);
+        }
+    }
+
+    if (!isVisible) {
+        return null;
     }
 
     return (
-        <SETextButton desc={desc} isDisabled={isDisabled} isVisible={isVisible} onClick={_onClick}/>
+        <SETextButton desc={desc} isDisabled={isDisabled} isVisible={isVisible} onClick={_onClick} value={value}/>
     );
 };
 
@@ -458,7 +540,7 @@ const Map = (props) => {
         mapRef.current = mapObj;
     }, []);
 
-    if (status === _statusType.CONGESTION_SETTING) {
+    if (status === _statusType.CONGESTION_SETTING || status === _statusType.EXIT_SETTING) {
         classList.push(Constants.SELECTING_CLASS);
     }
 
@@ -479,7 +561,7 @@ const MarkerTooltipView = () => {
     }
 
     return (
-        <SEMapTooltip image={`${Constants.IMAGE_URL}markerSelected.svg`} isOpen={isVisible} style={style}
+        <SEMapTooltip image={`${Constants.IMAGE_URL}marker_selected.svg`} isOpen={isVisible} style={style}
                       title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={_onClose}/>
     );
 };

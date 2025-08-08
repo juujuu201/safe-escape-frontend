@@ -8,10 +8,15 @@ const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
     _defaultZoomValue = Define.ZOOM,
     _settingStatus = Constants.STATUS_TYPE.CONGESTION_SETTING;
+let _modelIdCounter = 0;
 
 class Model {
     constructor() {
-        this.isVisible = true;
+        this._modelId = `model_${_modelIdCounter++}`; // 고유 ID 생성
+    }
+
+    getEventKey(key) {
+        return `${this._modelId}:${key}`; // 구독 키 예: "model_1:isVisible"
     }
 
     getValue(key) {
@@ -20,11 +25,10 @@ class Model {
 
     setValue(key, newValue) {
         if (!(key in this)) throw new Error(`Invalid key: ${key}`);
-
         this[key] = newValue;
 
-        // 상태 변경 알림: 이벤트 버스 emit
-        eventBus.emit(key, newValue);
+        const eventKey = this.getEventKey(key);
+        eventBus.emit(eventKey, newValue);
     }
 }
 
@@ -40,8 +44,11 @@ class AppModel extends Model {
 
         this.status = Constants.STATUS_TYPE.NONE;
         this.menuButtonModels = [];
-        this.tempMarkerModels = [];
-        this.selectedPolygon = null;
+        this.messageValue = "";
+
+        this.tempEdgeModels = [];
+        this.tempPolygonArea = null;
+        this.tempExitModels = [];
     }
 
     removeMarker(model) {
@@ -57,7 +64,8 @@ export class MarkerModel extends Model {
     constructor(options = {}) {
         super();
 
-        const {position, icon, iconSize, selectedColor, title, desc, onClick, onMouseOver, onMouseOut, map, naverMap, hasMarker} = options;
+        const {position, icon, iconSize, selectedColor, title, desc, onClick, onMouseOver, onMouseOut,
+            map, naverMap, hasMarker, removable} = options;
 
         if (!(position && map)) {
             return;
@@ -74,6 +82,7 @@ export class MarkerModel extends Model {
         this.title = title;
         this.desc = desc;
         this.selectState = "out";
+        this.isRemovable = removable ?? false;
 
         this.onClick = onClick;
         this.onMouseOver = onMouseOver;
@@ -81,6 +90,7 @@ export class MarkerModel extends Model {
 
         this.element = null;
         this.marker = null;
+        this.closeBtnEl = null;
         this.map = map;
         this.naverMap = naverMap ?? window.naver;
     }
@@ -216,6 +226,7 @@ export class MarkerModel extends Model {
         }
 
         if (this.iconUrl) {
+            // marker
             this.marker = new this.naverMap.maps.Marker({
                 position: this.position,
                 map: this.map,
@@ -227,6 +238,52 @@ export class MarkerModel extends Model {
 
             this.element = this.marker.eventTarget;
             this.element.setAttribute("id", Constants.MARKER_ID);
+
+            // marker close 버튼
+            if (this.isRemovable) {
+                const overlay = new this.naverMap.maps.OverlayView();
+
+                if (overlay) {
+                    const btnEl = document.createElement("div");
+
+                    btnEl.setAttribute("id", Constants.MARKER_CLOSE_BUTTON_ID);
+                    btnEl.innerHTML = "&times;";
+                    btnEl.addEventListener("click", e => {
+                        e.stopPropagation();
+                        this.remove();
+                    });
+                    this.closeBtnEl = btnEl;
+
+                    Util.addClass(this.element, Constants.REMOVABLE_CLASS);
+
+                    overlay.onAdd = () => {
+                        const pane = overlay.getPanes().floatPane;
+
+                        if (pane) {
+                            pane.appendChild(btnEl);
+                        }
+                    };
+
+                    overlay.draw = () => {
+                        const projection = overlay.getProjection();
+
+                        if (projection) {
+                            const pixel = projection.fromCoordToOffset(this.position);
+
+                            btnEl.style.left = `${pixel.x + 8}px`;
+                            btnEl.style.top = `${pixel.y - 55}px`;
+                        }
+                    };
+
+                    overlay.onRemove = () => {
+                        if (btnEl.parentNode) {
+                            btnEl.parentNode.removeChild(btnEl);
+                        }
+                    };
+
+                    overlay.setMap(this.map);
+                }
+            }
 
             this.attachEvents();
             this.marker.setPosition(this.position);
@@ -244,6 +301,23 @@ export class MarkerModel extends Model {
 
     hide() {
         if (this.marker) {
+            if (this.closeBtnEl) {
+                this.closeBtnEl.remove();
+            }
+
+            this.marker.setMap(null);
+        }
+    }
+
+    remove() {
+        const exitModels = appModel.tempExitModels,
+            idx = exitModels.indexOf(this);
+
+        if (idx !== -1) {
+            exitModels.splice(idx, 1);
+            appModel.setValue("tempExitModels", exitModels);
+
+            this.closeBtnEl.remove();
             this.marker.setMap(null);
         }
     }

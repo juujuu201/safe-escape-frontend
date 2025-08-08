@@ -1,6 +1,4 @@
 import {appModel} from "../model/AppModel.js";
-import Define from "../common/Define.js";
-import Constants from "../common/Constants.js";
 
 export default class Util {
     static closeMapTooltip(centerModel = appModel.centerModel) {
@@ -15,26 +13,43 @@ export default class Util {
         }
     }
 
-    static cancelCongestionSetting(map) {
+    static cancelCongestionSetting(map, isDeleteAll = false) {
         if (!map) {
             return;
         }
 
-        appModel.setValue("status", Constants.STATUS_TYPE.NONE);
-
-        // 혼잡 지역 설정 중 표시하던 마커와 폴리곤을 지운다.
-        for (const model of appModel.tempMarkerModels) {
+        // 혼잡 지역 설정 중 폴리곤을 지운다.
+        for (const model of appModel.tempEdgeModels) {
             model.hide();
         }
 
-        if (appModel.selectedPolygon) {
-            appModel.selectedPolygon.setMap(null);
+        if (appModel.tempPolygonArea) {
+            appModel.tempPolygonArea.setMap(null);
         }
 
-        appModel.setValue("tempMarkerModels", []);
-        appModel.setValue("selectedPolygon", null);
+        appModel.setValue("tempEdgeModels", []);
+        appModel.setValue("tempPolygonArea", null);
 
-        // 지도를 다시 움직일 수 있도록 설정한다.
-        map.setOptions(Define.MAP_MOVE_ENABLE_OPTIONS);
+        // 비상구 설정 중 표시하던 마커를 지운다.
+        if (isDeleteAll) {
+            for (const model of appModel.tempExitModels) {
+                model.hide();
+            }
+        }
+
+        appModel.setValue("tempExitModels", []);
+    }
+
+    static cancelExitSetting(map) {
+        if (!map) {
+            return;
+        }
+
+        // 혼잡 지역 설정 중 표시하던 마커와 폴리곤을 지운다.
+        for (const model of appModel.tempExitModels) {
+            model.hide();
+        }
+
+        appModel.setValue("tempExitModels", []);
     }
 }

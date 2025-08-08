@@ -100,4 +100,54 @@ export default class Util {
             return firstAngle - secondAngle;
         });
     }
+
+    static isContainsCoord(coord, pathList) {
+        if (this.isEmptyObject(coord) || pathList?.length < 1) {
+            return false;
+        }
+
+        const x = coord.lng(),
+            y = coord.lat(),
+            pathListLen = pathList.length;
+        let isContains = false;
+
+        for (let i = 0, j = pathListLen - 1; i < pathListLen; j = i++) {
+            const xi = pathList[i].lng(),
+                yi = pathList[i].lat(),
+                xj = pathList[j].lng(),
+                yj = pathList[j].lat();
+            let intersect;
+
+            if (!!xi && !!yi && !!xj && !!yj) {
+                intersect = (yi > y !== yj > y)
+                    && (x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-12) + xi);
+            }
+
+            if (intersect) {
+                isContains = !isContains;
+            }
+        }
+
+        return isContains;
+    }
+
+    static addClass(el, className) {
+        if (el && typeof className === "string") {
+            el.classList.add(className);
+        }
+    }
+
+    static removeClass(el, className) {
+        if (el && typeof className === "string") {
+            el.classList.remove(className);
+        }
+    }
+
+    static hasClass(el, className) {
+        if (!(el && typeof className === "string")) {
+            return false;
+        }
+
+        return el.classList.contains(className);
+    }
 }

@@ -7,17 +7,17 @@ import eventBus from "./EventBus.js";
  * @param {String} key - 상태 키
  */
 export function useModel(model, key) {
-    const [state, setState] = useState(); // 초기값 없이
+    const [state, setState] = useState();
 
     useEffect(() => {
         if (model) {
+            const eventKey = model.getEventKey(key);
             const handler = (newValue) => setState(newValue);
-            eventBus.on(key, handler);
 
-            // mount 직후 강제로 현재 값 한 번 설정
+            eventBus.on(eventKey, handler);
             setState(model.getValue(key));
 
-            return () => eventBus.off(key, handler);
+            return () => eventBus.off(eventKey, handler);
         }
     }, [model, key]);
 

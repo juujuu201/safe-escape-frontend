@@ -54,6 +54,7 @@ const Constants = {
     DISABLED_CLASS: "disabled",
     INVISIBLE_CLASS: "invisible",
     SELECTING_CLASS: "selecting",
+    REMOVABLE_CLASS: "removable",
 
     LOGO_TAB_BUTTON: "logo_tab_button",
     MENU_TAB: "menu_tab",
@@ -68,6 +69,7 @@ const Constants = {
     MAP_AREA_ID: "map_area",
     MARKER_BG_ID: "marker_bg",
     MARKER_ID: "marker",
+    MARKER_CLOSE_BUTTON_ID: "marker_close_button",
 
     /* MAP OPTION KEYS*/
     MAP_OPTION_KEYS: {
@@ -105,7 +107,8 @@ const Constants = {
         CANCEL_CONGESTION_SETTING: "cancel_congestion_setting",
         SET_EXIT: "set_exit",
         RESET_EXIT: "reset_exit",
-        FINISH_EXIT: "finish_exit"
+        FINISH_EXIT: "finish_exit",
+        STOP_CONGESTION_SETTING: "stop_congestion_setting"
     },
     MAX_CONGESTION_MARKER: 10
 };
