@@ -1,13 +1,14 @@
 /* colors */
 :root {
+  --white: #FFFFFF;
+  --black: #000000;
+  --red: #ED1C25;
   --bg-color: #FFFFFF;
   --theme-color: #006F13;
   --border-color: #D9D9D9;
   --disabled-color: #C9C9C9;
-  --white: #FFFFFF;
-  --black: #000000;
-  --red: #ED1C25;
   --deselected-color: #898989;
+  --hover-color: #D9D9D9;
 
   --title-bar-height: 60px;
   --menu-bar-width: 60px;
@@ -60,6 +61,31 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .message_bar .text_button .MuiBox-root {padding: 2px 10px;}
 
 /* VIEW */
+.login_view {display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;}
+.login_view > .MuiBox-root {width: 30%; height: fit-content; border: 1px solid var(--border-color); padding: 15px; border-radius: 5px;}
+.login_view .text_button .MuiBox-root {width: 100%; background-color: var(--theme-color); border-radius: var(--border-radius);}
+.login_view .text_button .text {display: flex; justify-content: center;}
+.login_view .text_button .MuiBox-root .MuiTypography-root {color: var(--white);}
+
+.login_view .input_text {margin-bottom: 24px;}
+.login_view .input_text .MuiFormControl-root {width: 100%;}
+.login_view .input_text label.MuiFormLabel-root {color: var(--black);}
+.login_view .input_text .MuiInputBase-root.Mui-focused {border: 1px solid var(--theme-color); border-radius: 5px;}
+.login_view .input_text .MuiInput-root::before,
+.login_view .input_text .MuiInput-root::after {border: none !important;}
+.login_view .input_text input {border: 1px solid var(--border-color); border-radius: 5px; height: 2rem; text-indent: 10px;}
+
+.alert_dialog .MuiDialogContent-root {display: flex; flex-direction: row; padding: 15px;}
+.alert_dialog .MuiDialogContent-root > div {margin-right: 10px;}
+.alert_dialog .MuiDialogContent-root > div > .text {margin-bottom: 10px;}
+.alert_dialog .MuiDialogContent-root .dialog_title .MuiTypography-root {color: var(--black);}
+.alert_dialog .MuiDialogContent-root .dialog_desc .MuiTypography-root {color: #757575;}
+.alert_dialog .MuiDialogContent-root .text_button {margin: 0;}
+.alert_dialog .MuiDialogContent-root .text_button .MuiButtonBase-root {background-color: var(--theme-color); border-radius: 5px;}
+.alert_dialog .MuiDialogContent-root .text_button .MuiButtonBase-root .MuiBox-root {width: 100%; padding: 10px;}
+.alert_dialog .MuiDialogContent-root .text_button .MuiButtonBase-root .text {display: flex; justify-content: center;}
+.alert_dialog .MuiDialogContent-root .text_button .MuiButtonBase-root .text .MuiTypography-root {color: var(--white);}
+
 .logo_tab_button {width: 45px; height: 45px; margin-bottom: 20px;}
 .menu_tab {width: 60px;}
 .menu_tab img {width: 25px; height: 25px;}
@@ -68,7 +94,7 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .map_area {flex: 1; width: 100%; height: 100%;}
 
 .side_bar.home {position: absolute; right: 16px; top: 16px; width: var(--side_bar_width); height: calc(100% - 64px); background: var(--bg-color); display: flex; flex-direction: column;}
-.side_bar.home .text_button { background-color: var(--white); border: 1px solid lightgray;}
+.side_bar.home .text_button {background-color: var(--white); border: 1px solid var(--border-color);}
 .side_bar.home .text_button .MuiBox-root {width: 100%; height: 100%;}
 .side_bar.home .shelter_list {flex: 1; overflow-y: auto;}
 
@@ -94,7 +120,7 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .congestion_menu_area .message_bar.invisible + .side_bar.congestion {position: absolute; right: 0;}
 
 #marker_close_button {position: absolute; width: 15px; height: 15px; background-color: var(--white); border-radius: 50%; padding: 2px; text-align: center; font-size: 10px; font-weight: 900; cursor: pointer !important;}
-#marker_close_button:hover {background-color: lightgray;}
+#marker_close_button:hover {background-color: var(--hover-color);}
 
 #map_area:not(.selecting) #congestion_area > path:hover,
 #map_area:not(.selecting) #congestion_area.selected > path {fill-opacity: 0.4 !important; cursor: pointer;}

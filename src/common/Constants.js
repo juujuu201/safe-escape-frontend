@@ -7,6 +7,8 @@ const Constants = {
         TITLE_BAR: "title_bar",
         MAP_AREA: "map_area",
         SIDE_BAR: "side_bar",
+
+        LOGIN_VIEW: "login_view"
     },
 
     /* WIDGET NAMES */
@@ -20,7 +22,9 @@ const Constants = {
         TEXT: "text",
         IMAGE: "image",
         MAP_TOOLTIP: "map_tooltip",
-        MESSAGE_BAR: "message_bar"
+        MESSAGE_BAR: "message_bar",
+        INPUT_TEXT: "input_text",
+        ALERT_DIALOG: "alert_dialog"
     },
 
     /* MENU NAMES */
@@ -44,11 +48,30 @@ const Constants = {
         }
     },
 
+    /* WIDGET PROPS */
+    INPUT_TYPES: {
+        TEXT: "text",
+        EMAIL: "email",
+        PASSWORD: "password",
+        TEL: "tel"
+    },
+    INPUT_NAMES: {
+        EMAIL: "email",
+        PASSWORD: "password"
+    },
+    BUTTON_TYPES: {
+        BUTTON: "button",
+        SUBMIT: "submit",
+        RESET: "reset"
+    },
+
     /* WIDGET CLASSES */
     TITLE_CLASS: "title",
     SUBTITLE_CLASS: "sub_title",
     DESCRIPTION_CLASS: "description",
     TAB_TEXT_CLASS: "tab_text",
+    DIALOG_TITLE: "dialog_title",
+    DIALOG_DESC: "dialog_desc",
 
     /* CLASSES */
     DISABLED_CLASS: "disabled",

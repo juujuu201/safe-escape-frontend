@@ -2,7 +2,7 @@ import {useState} from "react";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
 import Util from "../common/Utils.js";
-import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography} from "@mui/material";
+import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography, FormControl, FormLabel, Input, Dialog, DialogContent} from "@mui/material";
 import {Close} from "@mui/icons-material";
 
 const _widgetNames = Constants.WIDGET_NAMES;
@@ -75,6 +75,7 @@ export const SETextButton = (props) => {
         desc = "",
         isDisabled = false,
         isVisible = true,
+        type = Constants.BUTTON_TYPES.BUTTON,
         className, onClick, value
     } = props;
     let orgClassName = _widgetNames.TEXT_BUTTON,
@@ -98,7 +99,7 @@ export const SETextButton = (props) => {
 
     return (
         <div className={_extendClassName(orgClassName, className)}>
-            <ButtonBase onClick={onClick} disabled={isDisabled} value={value}>
+            <ButtonBase type={type} onClick={onClick} disabled={isDisabled} value={value}>
                 <Box>
                     {titleEl}
                     {descEl}
@@ -289,4 +290,38 @@ export const SEMessageBar = (props) => {
             {buttonDesc && <SETextButton desc={buttonDesc} onClick={onButtonClick}/>}
         </div>
     );
+};
+
+export const SEFormInput = (props) => {
+    const {label, name, placeholder, required, type, disabled, className} = props;
+
+    return (
+        <div className={_extendClassName(_widgetNames.INPUT_TEXT, className)}>
+            <FormControl>
+                <FormLabel htmlFor={name}>{label}</FormLabel>
+                <Input name={name} required={required} placeholder={placeholder} type={type} disabled={disabled}/>
+            </FormControl>
+        </div>
+    )
+};
+
+export const SEAlertDialog = (props) => {
+    const {open, onClose, title, desc, className} = props;
+
+    function _onClose(e) {
+        onClose && onClose();
+    }
+
+    return (
+        <Dialog className={_extendClassName(_widgetNames.ALERT_DIALOG, className)} open={open} onClose={_onClose}>
+            <DialogContent>
+                <SEImage image={`${Constants.IMAGE_URL}info.svg`}/>
+                <div>
+                    <SEText className={Constants.DIALOG_TITLE} desc={title} size="h5"/>
+                    <SEText className={Constants.DIALOG_DESC} desc={desc}/>
+                    <SETextButton desc={Resources.CONFIRM} onClick={_onClose}/>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
 };

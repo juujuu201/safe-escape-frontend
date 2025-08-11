@@ -16,7 +16,16 @@ const Resources = {
     SETTING_EXIT: "비상구 설정 중",
     SELECTED_CONGESTION: "선택된 혼잡지역이 있습니다",
     CANCEL_SELECTION: "선택 취소",
-    CANCEL_SETTING: "설정 취소"
+    CANCEL_SETTING: "설정 취소",
+
+    LOGIN: "로그인",
+    EMAIL: "이메일",
+    PASSWORD: "비밀번호",
+    INPUT_EMAIL: "이메일을 입력하세요.",
+    INPUT_PASSWORD: "비밀번호를 입력하세요.",
+    ALERT: "경고",
+    LOGIN_ALERT_MSG: "이메일이나 비밀번호를 다시 확인해주세요.",
+    CONFIRM: "확인"
 };
 
 export default Resources;
