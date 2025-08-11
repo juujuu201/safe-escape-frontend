@@ -1,7 +1,9 @@
 <svg width="324" height="324" viewBox="0 0 324 324" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <rect width="324" height="324" fill="url(#pattern0_39_40)"/>
-    <circle cx="162" cy="123.377" r="78.3179" fill="white"/>
-    <rect x="109.431" y="70.808" width="107.285" height="107.285" fill="url(#pattern1_39_40)"/>
+    <g id="marker">
+        <rect width="324" height="324" fill="url(#pattern0_39_40)"/>
+        <circle id="marker_bg" cx="162" cy="123.377" r="78.3179" fill="white"/>
+        <rect x="109.431" y="70.808" width="107.285" height="107.285" fill="url(#pattern1_39_40)"/>
+    </g>
     <defs>
         <pattern id="pattern0_39_40" patternContentUnits="objectBoundingBox" width="1" height="1">
             <use xlink:href="#image0_39_40" transform="scale(0.00195312)"/>

@@ -46,7 +46,7 @@ export const HomeSideBarView = () => {
         appModel.setValue("centerModel", markerModel);
     }
 
-    function _onClickMarker(e, markerModel) {
+    function _onClickShelter(e, markerModel) {
         appModel.markerTooltipModel.show(markerModel);
     }
 
@@ -62,7 +62,7 @@ export const HomeSideBarView = () => {
                         position: Util.getLocationObj({latitude, longitude}, _naverMap),
                         title: name,
                         desc: address,
-                        onClick: _onClickMarker,
+                        onClick: _onClickShelter,
                         map,
                         naverMap: _naverMap
                     });

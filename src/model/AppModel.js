@@ -7,8 +7,63 @@ import AppController from "../controller/AppController.js";
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
     _defaultZoomValue = Define.ZOOM,
-    _settingStatus = Constants.STATUS_TYPE.CONGESTION_SETTING;
+    _statusType = Constants.STATUS_TYPE;
 let _modelIdCounter = 0;
+
+function _addFloatingElement(id, model, saveProp = "", content = null, styleObj = {}) {
+    if (id && model) {
+        const overlay = new model.naverMap.maps.OverlayView();
+
+        if (overlay) {
+            const btnEl = document.createElement("div"),
+                {className, left, top, leftAdjust, topAdjust} = styleObj;
+
+            btnEl.setAttribute("id", id);
+            btnEl.innerHTML = content;
+            btnEl.addEventListener("click", e => {
+                e.stopPropagation();
+
+                model.remove();
+            });
+
+            if (className && model.element) {
+                Util.addClass(model.element, className);
+            }
+
+            if (saveProp) {
+                model[saveProp] = btnEl;
+            }
+
+            overlay.onAdd = () => {
+                const pane = overlay.getPanes().floatPane;
+
+                if (pane) {
+                    pane.appendChild(btnEl);
+                }
+            };
+
+            overlay.draw = () => {
+                const projection = overlay.getProjection();
+
+                if (projection) {
+                    const position = new model.naverMap.maps.LatLng(left, top),
+                        pixel = projection.fromCoordToOffset(position);
+
+                    btnEl.style.left = `${pixel.x + leftAdjust ?? 0}px`;
+                    btnEl.style.top = `${pixel.y + topAdjust ?? 0}px`;
+                }
+            };
+
+            overlay.onRemove = () => {
+                if (btnEl.parentNode) {
+                    btnEl.parentNode.removeChild(btnEl);
+                }
+            };
+
+            overlay.setMap(model.map);
+        }
+    }
+}
 
 class Model {
     constructor() {
@@ -39,12 +94,15 @@ class AppModel extends Model {
         this.map = null;
         this.centerModel = null;
         this.markerModels = [];
+        this.polygonAreas = [];
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
 
         this.status = Constants.STATUS_TYPE.NONE;
         this.menuButtonModels = [];
         this.messageValue = "";
+
+        this.selectedPolygon = null;
 
         this.tempEdgeModels = [];
         this.tempPolygonArea = null;
@@ -57,6 +115,10 @@ class AppModel extends Model {
         if (idx !== -1) {
             this.markerModels.splice(idx, 1);
         }
+    }
+
+    isSettingStatus() {
+        return (this.status === _statusType.CONGESTION_SETTING || this.status === _statusType.EXIT_SETTING);
     }
 }
 
@@ -150,7 +212,7 @@ export class MarkerModel extends Model {
 
         // [marker] click
         this.naverMap.maps.Event.addListener(this.marker, "click", e => {
-            if (appModel.status !== _settingStatus) {
+            if (!appModel.isSettingStatus()) {
                 this.setBgColor();
 
                 if (this.selectState !== "click") {
@@ -165,7 +227,7 @@ export class MarkerModel extends Model {
 
         // [marker] mouseover
         this.naverMap.maps.Event.addListener(this.marker, "mouseover", e => {
-            if (appModel.status !== _settingStatus && this.selectState !== "click") {
+            if (!appModel.isSettingStatus() && this.selectState !== "click") {
                 this.setBgColor();
                 this.setValue("selectState", "hover");
 
@@ -177,7 +239,7 @@ export class MarkerModel extends Model {
 
         // [marker] mouseout
         this.naverMap.maps.Event.addListener(this.marker, "mouseout", e => {
-            if (appModel.status !== _settingStatus && this.selectState !== "click") {
+            if (!appModel.isSettingStatus() && this.selectState !== "click") {
                 this.deSelect();
 
                 if (this.onMouseOut) {
@@ -241,48 +303,13 @@ export class MarkerModel extends Model {
 
             // marker close 버튼
             if (this.isRemovable) {
-                const overlay = new this.naverMap.maps.OverlayView();
-
-                if (overlay) {
-                    const btnEl = document.createElement("div");
-
-                    btnEl.setAttribute("id", Constants.MARKER_CLOSE_BUTTON_ID);
-                    btnEl.innerHTML = "&times;";
-                    btnEl.addEventListener("click", e => {
-                        e.stopPropagation();
-                        this.remove();
-                    });
-                    this.closeBtnEl = btnEl;
-
-                    Util.addClass(this.element, Constants.REMOVABLE_CLASS);
-
-                    overlay.onAdd = () => {
-                        const pane = overlay.getPanes().floatPane;
-
-                        if (pane) {
-                            pane.appendChild(btnEl);
-                        }
-                    };
-
-                    overlay.draw = () => {
-                        const projection = overlay.getProjection();
-
-                        if (projection) {
-                            const pixel = projection.fromCoordToOffset(this.position);
-
-                            btnEl.style.left = `${pixel.x + 8}px`;
-                            btnEl.style.top = `${pixel.y - 55}px`;
-                        }
-                    };
-
-                    overlay.onRemove = () => {
-                        if (btnEl.parentNode) {
-                            btnEl.parentNode.removeChild(btnEl);
-                        }
-                    };
-
-                    overlay.setMap(this.map);
-                }
+                _addFloatingElement(Constants.MARKER_CLOSE_BUTTON_ID, this, "closeBtnEl", "&times;", {
+                    className: Constants.REMOVABLE_CLASS,
+                    left: this.position.lat(),
+                    top: this.position.lng(),
+                    leftAdjust: 8,
+                    topAdjust: -55
+                });
             }
 
             this.attachEvents();
@@ -320,6 +347,16 @@ export class MarkerModel extends Model {
             this.closeBtnEl.remove();
             this.marker.setMap(null);
         }
+    }
+
+    showPriority() {
+        _addFloatingElement(Constants.EXIT_PRIORITY_CLASS, this, null, "1", {
+            className: null,
+            left: this.position.lat(),
+            top: this.position.lng(),
+            leftAdjust: 10,
+            topAdjust: -70
+        });
     }
 }
 
@@ -372,7 +409,7 @@ export class CongestionModel extends Model {
         this.area = null;
 
         this.map = map;
-        this.naverMap = naverMap;
+        this.naverMap = naverMap ?? window.naver;
     }
 
     show() {

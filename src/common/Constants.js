@@ -55,6 +55,7 @@ const Constants = {
     INVISIBLE_CLASS: "invisible",
     SELECTING_CLASS: "selecting",
     REMOVABLE_CLASS: "removable",
+    SELECTED_CLASS: "selected",
 
     LOGO_TAB_BUTTON: "logo_tab_button",
     MENU_TAB: "menu_tab",
@@ -64,12 +65,14 @@ const Constants = {
     SHELTER_LIST_CLASS: "shelter_list",
     REFRESH_BTN_CLASS: "refresh_btn",
     CONGESTION_MENU_AREA_CLASS: "congestion_menu_area",
+    EXIT_PRIORITY_CLASS: "exit_priority",
 
     /* ID */
     MAP_AREA_ID: "map_area",
     MARKER_BG_ID: "marker_bg",
     MARKER_ID: "marker",
     MARKER_CLOSE_BUTTON_ID: "marker_close_button",
+    CONGESTION_AREA_ID: "congestion_area",
 
     /* MAP OPTION KEYS*/
     MAP_OPTION_KEYS: {
@@ -107,8 +110,7 @@ const Constants = {
         CANCEL_CONGESTION_SETTING: "cancel_congestion_setting",
         SET_EXIT: "set_exit",
         RESET_EXIT: "reset_exit",
-        FINISH_EXIT: "finish_exit",
-        STOP_CONGESTION_SETTING: "stop_congestion_setting"
+        FINISH_EXIT: "finish_exit"
     },
     MAX_CONGESTION_MARKER: 10
 };

@@ -40,7 +40,7 @@ export default class Util {
         appModel.setValue("tempExitModels", []);
     }
 
-    static cancelExitSetting(map) {
+    static cancelExitSetting(map, isDeletePolygon = false) {
         if (!map) {
             return;
         }
@@ -50,6 +50,12 @@ export default class Util {
             model.hide();
         }
 
+        if (isDeletePolygon && appModel.tempPolygonArea) {
+            appModel.tempPolygonArea.setMap(null);
+        }
+
         appModel.setValue("tempExitModels", []);
+        appModel.setValue("tempEdgeModels", []);
+        appModel.setValue("tempPolygonArea", null);
     }
 }

@@ -23,13 +23,11 @@ const _viewNames = Constants.VIEW_NAMES,
         [`${_statusType.NONE}`]: _defaultButtonGroup,
         [`${_statusType.CONGESTION_SETTING}`]: [
             _congestionButtonValues.CANCEL_CONGESTION_SETTING,
-            _congestionButtonValues.SET_EXIT,
-            _congestionButtonValues.STOP_CONGESTION_SETTING
+            _congestionButtonValues.SET_EXIT
         ],
         [`${_statusType.EXIT_SETTING}`]: [
             _congestionButtonValues.RESET_EXIT,
-            _congestionButtonValues.FINISH_EXIT,
-            _congestionButtonValues.STOP_CONGESTION_SETTING
+            _congestionButtonValues.FINISH_EXIT
         ],
         [`${_statusType.CONGESTION_SELECTED}`]: _defaultButtonGroup,
         [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup
@@ -39,7 +37,31 @@ export const CongestionSideBarView = () => {
     const status = useModel(appModel, "status"),
         messageValue = useModel(appModel, "messageValue"),
         [visibleModels, setVisibleModels] = useState([]),
-        isMessageBarVisible = (status === Constants.STATUS_TYPE.CONGESTION_SETTING || status === Constants.STATUS_TYPE.EXIT_SETTING);
+        isSettingStatus = appModel.isSettingStatus();
+
+    function _onCancelSelection() {
+        if (isSettingStatus) {
+            const map = appModel.map;
+
+            AppController.cancelCongestionSetting(map, true);
+            map.setOptions(Define.MAP_MOVE_ENABLE_OPTIONS);
+            appModel.setValue("status", Constants.STATUS_TYPE.NONE);
+        } else if (status === _statusType.CONGESTION_SELECTED) {
+            const selectedPolygon = appModel.selectedPolygon;
+
+            if (selectedPolygon) {
+                const target = selectedPolygon.getShape().element;
+
+                if (target) {
+                    Util.removeClass(target, Constants.SELECTED_CLASS);
+                }
+
+                appModel.setValue("selectedPolygon", null);
+            }
+
+            appModel.setValue("status", _statusType.NONE);
+        }
+    }
 
     useEffect(() => {
         const buttonModels = [];
@@ -66,7 +88,7 @@ export const CongestionSideBarView = () => {
                 const value = model.value,
                     isVisible = (menuButtonGroup.indexOf(value) !== -1);
                 let isDisable = true,
-                    messageValue;
+                    messageValue = "";
 
                 if (model.isVisible !== isVisible) {
                     model.setValue("isVisible", isVisible);
@@ -86,6 +108,12 @@ export const CongestionSideBarView = () => {
                             }
                             messageValue = Resources.SETTING_EXIT;
                             break;
+                        case _statusType.CONGESTION_SELECTED:
+                            if (value === _congestionButtonValues.RECOMMEND_EXIT) {
+                                isDisable = false;
+                            }
+                            messageValue = Resources.SELECTED_CONGESTION;
+                            break;
                         case _statusType.NONE:
                             if (value === _congestionButtonValues.SET_CONGESTION) {
                                 isDisable = false;
@@ -93,17 +121,11 @@ export const CongestionSideBarView = () => {
                             break;
                     }
 
-                    if (value === _congestionButtonValues.STOP_CONGESTION_SETTING) {
-                        isDisable = false;
-                    }
-
                     if (model.isDisabled !== isDisable) {
                         model.setValue("isDisabled", isDisable);
                     }
 
-                    if (messageValue) {
-                        appModel.setValue("messageValue", messageValue);
-                    }
+                    appModel.setValue("messageValue", messageValue);
 
                     nextVisibleModels.push(model);
                 }
@@ -115,7 +137,8 @@ export const CongestionSideBarView = () => {
 
     return (
         <div className={Constants.CONGESTION_MENU_AREA_CLASS}>
-            <SEMessageBar desc={messageValue} isVisible={isMessageBarVisible}/>
+            <SEMessageBar desc={messageValue} isVisible={!!messageValue} onButtonClick={_onCancelSelection}
+                          buttonDesc={Resources[isSettingStatus ? "CANCEL_SETTING" : "CANCEL_SELECTION"]}/>
             <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`}>
                 {visibleModels.map(model =>
                     <CongestionMenuButton key={model.value} model={model}/>)}
@@ -170,6 +193,7 @@ const CongestionMenuButton = (props) => {
 
             // 비상구 추천
             case _congestionButtonValues.RECOMMEND_EXIT:
+                // model.showPriority();
                 break;
 
             // 비상구 설정하기
@@ -184,15 +208,12 @@ const CongestionMenuButton = (props) => {
 
             // 비상구 설정 완료
             case _congestionButtonValues.FINISH_EXIT:
-                isEnableMap = true;
-                AppController.cancelExitSetting(map);
-                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
-                break;
+                // TODO: api 연결 필요
+                appModel.setValue("markerModels", [...appModel.markerModels, ...appModel.tempExitModels]);
+                appModel.setValue("polygonAreas", [...appModel.polygonAreas, ...[appModel.tempPolygonArea]]);
 
-            // 혼잡 지역 설정 취소
-            case _congestionButtonValues.STOP_CONGESTION_SETTING:
                 isEnableMap = true;
-                AppController.cancelCongestionSetting(map, true);
+                AppController.cancelExitSetting(map, true);
                 appModel.setValue("status", Constants.STATUS_TYPE.NONE);
                 break;
         }

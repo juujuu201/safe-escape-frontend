@@ -94,6 +94,9 @@ const MapAreaView = (props) => {
         polygon = useModel(appModel, "tempPolygonArea"),
         tempEdgeModels = useModel(appModel, "tempEdgeModels"),
         tempExitModels = useModel(appModel, "tempExitModels"),
+        markerModels = useModel(appModel, "markerModels"),
+        polygonAreas = useModel(appModel, "polygonAreas"),
+        selectedPolygon = useModel(appModel, "selectedPolygon"),
         map = appModel.map;
 
     function _onClickRefresh() {
@@ -110,6 +113,10 @@ const MapAreaView = (props) => {
 
             /* TODO: 현재 위치에서 대피소 재검색 */
         }
+    }
+
+    function _onClickExit(e, markerModel) {
+        appModel.markerTooltipModel.show(markerModel);
     }
 
     function _onClickMap(e) {
@@ -164,6 +171,7 @@ const MapAreaView = (props) => {
                     position: coord,
                     naverMap: _naverMap,
                     removable: true,
+                    onClick: _onClickExit,
                     map
                 });
 
@@ -203,6 +211,36 @@ const MapAreaView = (props) => {
     }, [tempEdgeModels]);
 
     useEffect(() => {
+        if (markerModels?.length > 0) {
+            for (const model of markerModels) {
+                if (model.isRemovable) {
+                    model.setValue("isRemovable", false);
+                }
+
+                model.show();
+            }
+        }
+
+        if (polygonAreas?.length > 0) {
+            for (const polygon of polygonAreas) {
+                const eventTarget = polygon.getShape().element;
+
+                if (eventTarget) {
+                    eventTarget.setAttribute("id", Constants.CONGESTION_AREA_ID);
+
+                    eventTarget.addEventListener("click", e => {
+                        appModel.setValue("selectedPolygon", polygon);
+                        // Util.addClass(e.target, Constants.SELECTED_CLASS);
+                        appModel.setValue("status", _statusType.CONGESTION_SELECTED);
+                    });
+                }
+
+                polygon.setMap(map);
+            }
+        }
+    }, [markerModels, polygonAreas]);
+
+    useEffect(() => {
         if (tempExitModels?.length > 0) {
             const setFinishBtn = appModel.menuButtonModels.find(model => model.value === _congestionButtonValues.FINISH_EXIT);
 
@@ -212,6 +250,16 @@ const MapAreaView = (props) => {
             }
         }
     }, [tempExitModels]);
+
+    useEffect(() => {
+        if (selectedPolygon) {
+            const target = selectedPolygon.getShape().element;
+
+            if (target) {
+                Util.addClass(target, Constants.SELECTED_CLASS);
+            }
+        }
+    }, [selectedPolygon]);
 
     return (
         <div className={_viewNames.MAP_AREA}>
