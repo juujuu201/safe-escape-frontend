@@ -50,12 +50,19 @@ export const CongestionSideBarView = () => {
             const selectedPolygon = appModel.selectedPolygon;
 
             if (selectedPolygon) {
-                const target = selectedPolygon.getShape().element;
+                const target = selectedPolygon.element;
 
                 if (target) {
                     Util.removeClass(target, Constants.SELECTED_CLASS);
                 }
 
+                for (const marker of selectedPolygon.markers) {
+                    const priorityEl = marker.priorityEl;
+
+                    if (priorityEl) {
+                        priorityEl.remove();
+                    }
+                }
                 appModel.setValue("selectedPolygon", null);
             }
 
@@ -193,7 +200,13 @@ const CongestionMenuButton = (props) => {
 
             // 비상구 추천
             case _congestionButtonValues.RECOMMEND_EXIT:
-                // model.showPriority();
+                const selectedPolygon = appModel.selectedPolygon;
+
+                if (selectedPolygon && selectedPolygon.markers?.length > 0) {
+                    for (const marker of selectedPolygon.markers) {
+                        marker.showPriority();
+                    }
+                }
                 break;
 
             // 비상구 설정하기
@@ -209,8 +222,12 @@ const CongestionMenuButton = (props) => {
             // 비상구 설정 완료
             case _congestionButtonValues.FINISH_EXIT:
                 // TODO: api 연결 필요
-                appModel.setValue("markerModels", [...appModel.markerModels, ...appModel.tempExitModels]);
-                appModel.setValue("polygonAreas", [...appModel.polygonAreas, ...[appModel.tempPolygonArea]]);
+                const {tempPolygonModel, tempExitModels} = appModel;
+
+                appModel.setValue("markerModels", [...appModel.markerModels, ...tempExitModels]);
+
+                tempPolygonModel.addMarkers(tempExitModels);
+                appModel.setValue("polygonModels", [...appModel.polygonModels, ...[tempPolygonModel]]);
 
                 isEnableMap = true;
                 AppController.cancelExitSetting(map, true);

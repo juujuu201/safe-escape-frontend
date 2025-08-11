@@ -7,7 +7,8 @@ import AppController from "../controller/AppController.js";
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
     _defaultZoomValue = Define.ZOOM,
-    _statusType = Constants.STATUS_TYPE;
+    _statusType = Constants.STATUS_TYPE,
+    _themeColor = Constants.COLORS.THEME;
 let _modelIdCounter = 0;
 
 function _addFloatingElement(id, model, saveProp = "", content = null, styleObj = {}) {
@@ -94,7 +95,7 @@ class AppModel extends Model {
         this.map = null;
         this.centerModel = null;
         this.markerModels = [];
-        this.polygonAreas = [];
+        this.polygonModels = [];
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
 
@@ -105,7 +106,7 @@ class AppModel extends Model {
         this.selectedPolygon = null;
 
         this.tempEdgeModels = [];
-        this.tempPolygonArea = null;
+        this.tempPolygonModel = null;
         this.tempExitModels = [];
     }
 
@@ -153,6 +154,7 @@ export class MarkerModel extends Model {
         this.element = null;
         this.marker = null;
         this.closeBtnEl = null;
+        this.priorityEl = null;
         this.map = map;
         this.naverMap = naverMap ?? window.naver;
     }
@@ -350,13 +352,78 @@ export class MarkerModel extends Model {
     }
 
     showPriority() {
-        _addFloatingElement(Constants.EXIT_PRIORITY_CLASS, this, null, "1", {
+        _addFloatingElement(Constants.EXIT_PRIORITY_CLASS, this, "priorityEl", "1", {
             className: null,
             left: this.position.lat(),
             top: this.position.lng(),
-            leftAdjust: 10,
-            topAdjust: -70
+            leftAdjust: 15,
+            topAdjust: -60
         });
+    }
+}
+
+export class PolygonModel extends Model {
+    constructor(options = {}) {
+        super();
+
+        const {position, onClick, map, naverMap, pathList, strokeColor, fillColor, fillOpacity} = options;
+
+        this.polygon = null;
+        this.element = null;
+
+        this.pathList = pathList ?? [];
+        this.position = position;
+        this.onClick = onClick;
+        this.strokeColor = strokeColor ?? _themeColor;
+        this.fillColor = fillColor ?? _themeColor;
+        this.fillOpacity = fillOpacity ?? 0.2;
+
+        this.map = map;
+        this.naverMap = naverMap ?? window.naver;
+
+        this.markers = [];
+    }
+
+    show(isOnlyShow = false) {
+        if (!isOnlyShow) {
+            if (this.polygon) {
+                this.polygon.setMap(null);
+            }
+
+            this.polygon = new this.naverMap.maps.Polygon({
+                paths: Util.sortPointsClockwise(this.pathList),
+                strokeColor: this.strokeColor,
+                fillColor: this.fillColor,
+                fillOpacity: this.fillOpacity
+            });
+
+            this.element = this.polygon.getShape().element;
+            this.element.setAttribute("id", Constants.CONGESTION_AREA_ID);
+
+            if (this.onClick) {
+                this.element.addEventListener("click", e => {
+                    this.onClick(e, this);
+                });
+            }
+        }
+
+        this.polygon.setMap(this.map);
+    }
+
+    addPath(path) {
+        this.setValue("pathList", [...this.pathList, ...[path]])
+    }
+
+    addMarkers(markers) {
+        let newMarkers = [];
+
+        if (markers instanceof  Array) {
+            newMarkers = [...this.markers, ...markers];
+        } else {
+            newMarkers.push(markers);
+        }
+
+        this.setValue("markers", newMarkers);
     }
 }
 

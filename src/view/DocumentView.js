@@ -4,7 +4,7 @@ import Resources from "../common/Resources.js";
 import Define from "../common/Define.js";
 import Util from "../common/Utils.js";
 import {useModel} from "../controller/UseModel.js";
-import {appModel, MarkerModel} from "../model/AppModel.js";
+import {appModel, MarkerModel, PolygonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {HomeSideBarView} from "./HomeView.js";
 import {CongestionSideBarView} from "./CongestionView.js";
@@ -91,11 +91,11 @@ const MapAreaView = (props) => {
         centerModel = useModel(appModel, "centerModel"),
         refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
         status = useModel(appModel, "status"),
-        polygon = useModel(appModel, "tempPolygonArea"),
+        tempPolygonModel = useModel(appModel, "tempPolygonModel"),
         tempEdgeModels = useModel(appModel, "tempEdgeModels"),
         tempExitModels = useModel(appModel, "tempExitModels"),
         markerModels = useModel(appModel, "markerModels"),
-        polygonAreas = useModel(appModel, "polygonAreas"),
+        polygonModels = useModel(appModel, "polygonModels"),
         selectedPolygon = useModel(appModel, "selectedPolygon"),
         map = appModel.map;
 
@@ -129,6 +129,8 @@ const MapAreaView = (props) => {
         }
 
         if (status === _statusType.CONGESTION_SETTING) {
+            let polygonModel = tempPolygonModel;
+
             markerModel = new MarkerModel({
                 naverMap: _naverMap,
                 hasMarker: false,
@@ -140,32 +142,24 @@ const MapAreaView = (props) => {
             appModel.setValue("tempEdgeModels", newModels);
             markerModel.show();
 
-            if (polygon) {
-                polygon.setMap(null);
+            if (!polygonModel) {
+                polygonModel = new PolygonModel({
+                    map,
+                    naverMap: _naverMap,
+                    onClick: (e, model) => {
+                        if (!appModel.isSettingStatus()) {
+                            appModel.setValue("selectedPolygon", model);
+                            appModel.setValue("status", _statusType.CONGESTION_SELECTED);
+                        }
+                    }
+                });
             }
 
-            // 2개 이상 선택된 경우
-            if (newModels?.length > 1) {
-                pathList = newModels.map(model => model.position);
-
-                // polygon 표시
-                if (pathList) {
-                    pathList = Util.sortPointsClockwise(pathList);
-
-                    appModel.setValue("tempPolygonArea",
-                        new _naverMap.maps.Polygon({
-                            paths: Util.sortPointsClockwise(pathList),
-                            strokeColor: _themeColor,
-                            fillColor: _themeColor,
-                            fillOpacity: 0.2,
-                            map: appModel.map
-                        }));
-                }
-            }
+            polygonModel.addPath(markerModel.position);
+            polygonModel.show();
+            appModel.setValue("tempPolygonModel", polygonModel);
         } else if (status === _statusType.EXIT_SETTING) {
-            pathList = tempEdgeModels.map(model => model.position);
-
-            if (Util.isContainsCoord(coord, pathList)) {
+            if (Util.isContainsCoord(coord, tempPolygonModel.pathList)) {
                 markerModel = new MarkerModel({
                     icon: `${Constants.IMAGE_URL}exit_marker.svg`,
                     position: coord,
@@ -189,15 +183,14 @@ const MapAreaView = (props) => {
     }, [centerModel]);
 
     useEffect(() => {
-        if (tabValue === _menuNames.CONGESTION
-            && (status === _statusType.CONGESTION_SETTING || status === _statusType.EXIT_SETTING)) {
+        if (tabValue === _menuNames.CONGESTION && appModel.isSettingStatus()) {
             const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onClickMap);
 
             return () => {
                 _naverMap.maps.Event.removeListener(clickListener);
             };
         }
-    }, [status, polygon, tempEdgeModels]);
+    }, [status, tempPolygonModel, tempEdgeModels]);
 
     useEffect(() => {
         if (tempEdgeModels) {
@@ -221,24 +214,12 @@ const MapAreaView = (props) => {
             }
         }
 
-        if (polygonAreas?.length > 0) {
-            for (const polygon of polygonAreas) {
-                const eventTarget = polygon.getShape().element;
-
-                if (eventTarget) {
-                    eventTarget.setAttribute("id", Constants.CONGESTION_AREA_ID);
-
-                    eventTarget.addEventListener("click", e => {
-                        appModel.setValue("selectedPolygon", polygon);
-                        // Util.addClass(e.target, Constants.SELECTED_CLASS);
-                        appModel.setValue("status", _statusType.CONGESTION_SELECTED);
-                    });
-                }
-
-                polygon.setMap(map);
+        if (polygonModels?.length > 0) {
+            for (const polygon of polygonModels) {
+                polygon.show(true);
             }
         }
-    }, [markerModels, polygonAreas]);
+    }, [markerModels, polygonModels]);
 
     useEffect(() => {
         if (tempExitModels?.length > 0) {
@@ -253,7 +234,7 @@ const MapAreaView = (props) => {
 
     useEffect(() => {
         if (selectedPolygon) {
-            const target = selectedPolygon.getShape().element;
+            const target = selectedPolygon.element;
 
             if (target) {
                 Util.addClass(target, Constants.SELECTED_CLASS);

@@ -96,5 +96,8 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 #marker_close_button {position: absolute; width: 15px; height: 15px; background-color: var(--white); border-radius: 50%; padding: 2px; text-align: center; font-size: 10px; font-weight: 900; cursor: pointer !important;}
 #marker_close_button:hover {background-color: lightgray;}
 
-#congestion_area > path:hover,
-#congestion_area.selected > path {fill-opacity: 0.4 !important; cursor: pointer;}
+#map_area:not(.selecting) #congestion_area > path:hover,
+#map_area:not(.selecting) #congestion_area.selected > path {fill-opacity: 0.4 !important; cursor: pointer;}
+
+#exit_priority {position: absolute; min-width: 15px; height: 15px; background-color: var(--white); border-radius: 5px; padding: 2px; text-align: center; font-size: 10px; font-weight: 900; border: var(--black) 1px solid; cursor: default !important;}
+#exit_priority:hover {z-index: 9999;}

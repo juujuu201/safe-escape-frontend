@@ -23,12 +23,12 @@ export default class Util {
             model.hide();
         }
 
-        if (appModel.tempPolygonArea) {
-            appModel.tempPolygonArea.setMap(null);
+        if (appModel.tempPolygonModel) {
+            appModel.tempPolygonModel.polygon?.setMap(null);
         }
 
         appModel.setValue("tempEdgeModels", []);
-        appModel.setValue("tempPolygonArea", null);
+        appModel.setValue("tempPolygonModel", null);
 
         // 비상구 설정 중 표시하던 마커를 지운다.
         if (isDeleteAll) {
@@ -50,12 +50,12 @@ export default class Util {
             model.hide();
         }
 
-        if (isDeletePolygon && appModel.tempPolygonArea) {
-            appModel.tempPolygonArea.setMap(null);
+        if (isDeletePolygon && appModel.tempPolygonModel) {
+            appModel.tempPolygonModel.polygon?.setMap(null);
         }
 
         appModel.setValue("tempExitModels", []);
         appModel.setValue("tempEdgeModels", []);
-        appModel.setValue("tempPolygonArea", null);
+        appModel.setValue("tempPolygonModel", null);
     }
 }
