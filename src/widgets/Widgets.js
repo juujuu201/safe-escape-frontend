@@ -1,8 +1,9 @@
-import {useState} from "react";
+import {useRef, useState, useEffect} from "react";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
 import Util from "../common/Utils.js";
-import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography, FormControl, FormLabel, Input, Dialog, DialogContent} from "@mui/material";
+import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography, FormControl, FormLabel, Input, Dialog, DialogContent,
+    List, ListItemButton, ListItemText, ClickAwayListener} from "@mui/material";
 import {Close} from "@mui/icons-material";
 
 const _widgetNames = Constants.WIDGET_NAMES;
@@ -296,7 +297,7 @@ export const SEFormInput = (props) => {
     const {label, name, placeholder, required, type, disabled, className} = props;
 
     return (
-        <div className={_extendClassName(_widgetNames.INPUT_TEXT, className)}>
+        <div className={_extendClassName(_widgetNames.FORM_INPUT, className)}>
             <FormControl>
                 <FormLabel htmlFor={name}>{label}</FormLabel>
                 <Input name={name} required={required} placeholder={placeholder} type={type} disabled={disabled}/>
@@ -323,5 +324,82 @@ export const SEAlertDialog = (props) => {
                 </div>
             </DialogContent>
         </Dialog>
+    )
+};
+
+export const SEInputText = (props) => {
+    const {
+            hasList = false,
+            listData = [],
+            inputClassName, name, placeholder, type, disabled, onChange, onFocus,
+            listClassName, keyProp, titleProp, descProp, onListClose, onClickListItem
+        } = props,
+        inputRef = useRef(null),
+        listRef = useRef(null),
+        [isFocus, setFocus] = useState(false);
+    let listChildren = null;
+
+    function _onClose(e) {
+        if (inputRef.current) {
+            inputRef.current.blur();
+        }
+
+        setFocus(false);
+        onListClose && onListClose();
+    }
+
+    function _onFocus(e) {
+        setFocus(true);
+        onFocus && onFocus(e);
+    }
+
+    function _onClickListItem(e, data) {
+        onClickListItem && onClickListItem(data);
+        _onClose();
+    }
+
+    function _onClickOutside(e) {
+        if (!inputRef.current?.contains(e.target) && !listRef.current?.contains(e.target)) {
+            _onClose();
+        }
+    }
+
+    function _onKeyDown(e) {
+        if (e.key === "Escape" && isFocus) {
+            _onClose();
+        }
+    }
+
+    useEffect(() => {
+        document.addEventListener("keydown", _onKeyDown);
+        document.addEventListener("mousedown", _onClickOutside);
+
+        return () => {
+            document.removeEventListener("keydown", _onKeyDown);
+            document.removeEventListener("mousedown", _onClickOutside);
+        };
+    }, [isFocus]);
+
+    if (hasList && listData.length > 0) {
+        listChildren = (
+            <ClickAwayListener onClickAway={_onClickOutside}>
+                <List className={_extendClassName(_widgetNames.LIST, listClassName)} ref={listRef} tabIndex={0}>
+                    {listData.map(data => (
+                        <ListItemButton key={data[keyProp]} onClick={e => _onClickListItem(e, data)}>
+                            <ListItemText className={Constants.LIST_ITEM_TITLE_DESC_CLASS}>{data[titleProp]}</ListItemText>
+                            {data[descProp] && <ListItemText className={Constants.LIST_ITEM_SUB_DESC_CLASS}>{data[descProp]}</ListItemText>}
+                        </ListItemButton>
+                    ))}
+                </List>
+            </ClickAwayListener>
+        );
+    }
+
+    return (
+        <div className={_extendClassName(_widgetNames.INPUT_TEXT, inputClassName)}>
+            <Input name={name} inputRef={inputRef} type={type || Constants.INPUT_TYPES.TEXT} placeholder={placeholder}
+                   disabled={disabled} onChange={onChange} onFocus={_onFocus}/>
+            {listChildren}
+        </div>
     )
 };

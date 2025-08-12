@@ -24,7 +24,9 @@ const Constants = {
         MAP_TOOLTIP: "map_tooltip",
         MESSAGE_BAR: "message_bar",
         INPUT_TEXT: "input_text",
-        ALERT_DIALOG: "alert_dialog"
+        FORM_INPUT: "form_input",
+        ALERT_DIALOG: "alert_dialog",
+        LIST: "list"
     },
 
     /* MENU NAMES */
@@ -89,6 +91,10 @@ const Constants = {
     REFRESH_BTN_CLASS: "refresh_btn",
     CONGESTION_MENU_AREA_CLASS: "congestion_menu_area",
     EXIT_PRIORITY_CLASS: "exit_priority",
+    SEARCH_INPUT_CLASS: "search_input",
+    SEARCH_LIST_BOX_CLASS: "search_list_box",
+    LIST_ITEM_TITLE_DESC_CLASS: "list_item_title_desc",
+    LIST_ITEM_SUB_DESC_CLASS: "list_item_sub_desc",
 
     /* ID */
     MAP_AREA_ID: "map_area",

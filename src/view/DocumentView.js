@@ -8,7 +8,7 @@ import {appModel, MarkerModel, PolygonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {HomeSideBarView} from "./HomeView.js";
 import {CongestionSideBarView} from "./CongestionView.js";
-import {SEImageButton, SETab, SEMapTooltip, SEIconButton} from "../widgets/Widgets.js";
+import {SEImageButton, SETab, SEMapTooltip, SEIconButton, SEInputText} from "../widgets/Widgets.js";
 import {Refresh} from "@mui/icons-material";
 
 const _naverMap = window.naver,
@@ -79,9 +79,61 @@ const MenuBarView = (props) => {
 };
 
 const TitleBarView = () => {
+    const [query, setQuery] = useState(""),
+        [results, setResults] = useState([]),
+        [searchModel, setSearchModel] = useState(null),
+        places = useRef(null);
+
+    function _doSearch(e) {
+        const value = e.target.value;
+
+        setQuery(value);
+
+        if (!value || !places.current) {
+            setResults([]);
+            return;
+        }
+
+        places.current.keywordSearch(value, (data, status) => {
+            if (status === window.kakao.maps.services.Status.OK) {
+                setResults(data);
+            } else {
+                setResults([]);
+            }
+        })
+    }
+
+    function _onClickListItem(item) {
+        let newSearchModel;
+
+        if (searchModel) {
+            searchModel.hide();
+        }
+
+        newSearchModel = new MarkerModel({
+            position: Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap),
+            naverMap: _naverMap,
+            map: appModel.map
+        });
+
+        newSearchModel.show(true);
+        setSearchModel(newSearchModel);
+    }
+
+    useEffect(() => {
+        if (window.kakao && window.kakao.maps) {
+            window.kakao.maps.load(() => {
+                places.current = new window.kakao.maps.services.Places();
+            });
+        }
+    }, []);
+
     return (
         <div className={_viewNames.TITLE_BAR}>
-
+            <SEInputText inputClassName={Constants.SEARCH_INPUT_CLASS} value={query} placeholder={Resources.SEARCH_ADDRESS} onChange={_doSearch}
+                         listClassName={Constants.SEARCH_LIST_BOX_CLASS} hasList={true} listData={results} onFocus={_doSearch}
+                         onClickListItem={_onClickListItem} onListClose={() => setResults([])}
+                         keyProp={"id"} titleProp={"place_name"} descProp={"road_address_name"}/>
         </div>
     );
 };
