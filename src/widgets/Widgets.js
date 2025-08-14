@@ -239,10 +239,11 @@ export const SEText = (props) => {
 
 export const SEMapTooltip = (props) => {
     const {
-        isOpen = false,
-        image, title, desc, className, onClose, style
-    } = props;
-    let styleObj;
+            isOpen = false,
+            isTextOnly = false,
+            image, title, desc, className, onClose, style, ref
+        } = props,
+        classList = _getClassList(className) || [];
 
     function _onClose() {
         if (onClose) {
@@ -254,19 +255,20 @@ export const SEMapTooltip = (props) => {
         return null;
     }
 
-    if (!Util.isEmptyObject(style)) {
-        styleObj = style;
+    if (isTextOnly) {
+        classList.push(Constants.TEXT_ONLY_CLASS);
     }
 
     return (
-        <div className={_extendClassName(_widgetNames.MAP_TOOLTIP, className)} style={styleObj}>
-            <IconButton onClick={_onClose}>
-                <Close fontSize="small"/>
-            </IconButton>
+        <div ref={ref} className={_extendClassName(_widgetNames.MAP_TOOLTIP, classList)} style={style}>
+            {!isTextOnly &&
+                <IconButton onClick={_onClose}>
+                    <Close fontSize="small"/>
+                </IconButton>}
             <div className={Constants.MAP_TOOLTIP_CONTENT}>
-                {image && <SEImage image={image}/>}
+                {(!isTextOnly && image) && <SEImage image={image}/>}
                 <div>
-                    {title && <SEText className={Constants.SUBTITLE_CLASS} desc={title}/>}
+                    {(!isTextOnly && title) && <SEText className={Constants.SUBTITLE_CLASS} desc={title}/>}
                     {desc && <SEText className={Constants.DESCRIPTION_CLASS} desc={desc}/>}
                 </div>
             </div>

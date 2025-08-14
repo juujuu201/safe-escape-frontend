@@ -103,7 +103,10 @@ class AppModel extends Model {
         this.menuButtonModels = [];
         this.messageValue = "";
 
+        this.selectedExit = null;
         this.selectedPolygon = null;
+        this.selectedShelter = null;
+        this.routeInfo = {};
 
         this.tempEdgeModels = [];
         this.tempPolygonModel = null;
@@ -120,6 +123,25 @@ class AppModel extends Model {
 
     isSettingStatus() {
         return (this.status === _statusType.CONGESTION_SETTING || this.status === _statusType.EXIT_SETTING);
+    }
+
+    isSelectedStatus() {
+        return (this.status === _statusType.EXIT_SELECTED || this.status === _statusType.EXIT_SHELTER_SELECTED);
+    }
+
+    removeRoutes() {
+        if (!Util.isEmptyObject(this.routeInfo)) {
+            const {startMarker, endMarker, routeLines} = this.routeInfo;
+
+            startMarker.deSelect();
+            endMarker.deSelect();
+
+            for (const line of routeLines) {
+                line.setMap(null);
+            }
+        }
+
+        this.setValue("routeInfo", {});
     }
 }
 
@@ -212,6 +234,19 @@ export class MarkerModel extends Model {
             return;
         }
 
+        function _relocateTooltip() {
+            const markerTooltipModel = appModel.getValue("markerTooltipModel");
+
+            if (markerTooltipModel) {
+                const {isVisible, isTextOnly} = markerTooltipModel;
+
+                // text tooltip을 이동시킨다.
+                if (isVisible && isTextOnly) {
+                    markerTooltipModel.move(appModel.selectedExit);
+                }
+            }
+        }
+
         // [marker] click
         this.naverMap.maps.Event.addListener(this.marker, "click", e => {
             if (!appModel.isSettingStatus()) {
@@ -270,13 +305,31 @@ export class MarkerModel extends Model {
                 }
 
                 // 툴팁이 열려있는 경우 닫기
-                if (markerTooltipModel?.isVisible) {
-                    AppController.closeMapTooltip(centerModel);
+                if (markerTooltipModel) {
+                    const {isVisible, isTextOnly} = markerTooltipModel;
+
+                    if (isVisible && !isTextOnly) {
+                        AppController.closeMapTooltip(centerModel);
+                    }
                 }
             }
+
+            // 툴팁 위치를 재계산한다.
+            _relocateTooltip();
+        });
+
+        // [map] idle
+        this.naverMap.maps.Event.addListener(this.map, "idle", e => {
+            // 툴팁 위치를 재계산한다.
+            _relocateTooltip();
         });
 
         this._setIconUrl();
+    }
+
+    select() {
+        this.setValue("selectState", "click");
+        this.setBgColor(Constants.COLORS.BLACK);
     }
 
     deSelect() {
@@ -425,6 +478,12 @@ export class PolygonModel extends Model {
 
         this.setValue("markers", newMarkers);
     }
+
+    hide() {
+        if (this.polygon) {
+            this.polygon.setMap(null);
+        }
+    }
 }
 
 class MarkerTooltipModel extends Model {
@@ -435,22 +494,19 @@ class MarkerTooltipModel extends Model {
         this.title = "";
         this.desc = "";
         this.style = {};
+        this.isTextOnly = false;
     }
 
-    show(markerModel) {
-        const {title, desc, element} = markerModel;
+    show(markerModel, isTextOnly = false) {
+        const {title, desc} = markerModel;
 
         this.setValue("isVisible", true);
-        this.setValue("title", title);
+        this.setValue("title", isTextOnly ? "" : title);
         this.setValue("desc", desc);
+        this.move(markerModel);
 
-        if (element) {
-            const {top, left} = element.getBoundingClientRect();
-
-            this.setValue("style", {
-                top: `${top}px`,
-                left: `${left}px`
-            });
+        if (this.isTextOnly !== isTextOnly) {
+            this.setValue("isTextOnly", isTextOnly);
         }
     }
 
@@ -458,6 +514,20 @@ class MarkerTooltipModel extends Model {
         this.setValue("isVisible", false);
         this.setValue("title", "");
         this.setValue("desc", "");
+    }
+
+    move(markerModel) {
+        const element = markerModel.element;
+
+        if (element) {
+            const {top, left} = element.getBoundingClientRect();
+
+            this.setValue("desc", markerModel.desc);
+            this.setValue("style", {
+                top: `${top}px`,
+                left: `${left}px`
+            });
+        }
     }
 }
 

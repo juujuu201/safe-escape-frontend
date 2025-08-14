@@ -95,6 +95,7 @@ const Constants = {
     SEARCH_LIST_BOX_CLASS: "search_list_box",
     LIST_ITEM_TITLE_DESC_CLASS: "list_item_title_desc",
     LIST_ITEM_SUB_DESC_CLASS: "list_item_sub_desc",
+    TEXT_ONLY_CLASS: "text_only",
 
     /* ID */
     MAP_AREA_ID: "map_area",
@@ -129,7 +130,8 @@ const Constants = {
         CONGESTION_SETTING: "congestion_setting",
         EXIT_SETTING: "exit_setting",
         CONGESTION_SELECTED: "congestion_selected" ,
-        EXIT_SELECTED: "exit_selected"
+        EXIT_SELECTED: "exit_selected",
+        EXIT_SHELTER_SELECTED: "exit_shelter_selected"
     },
     CONGESTION_BUTTON_VALUES: {
         SET_CONGESTION: "congestion_setting",
@@ -139,7 +141,8 @@ const Constants = {
         CANCEL_CONGESTION_SETTING: "cancel_congestion_setting",
         SET_EXIT: "set_exit",
         RESET_EXIT: "reset_exit",
-        FINISH_EXIT: "finish_exit"
+        FINISH_EXIT: "finish_exit",
+        DELETE_CONGESTION: "delete_congestion"
     },
     MAX_CONGESTION_MARKER: 10
 };

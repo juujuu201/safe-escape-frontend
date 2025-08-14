@@ -1,5 +1,5 @@
 const Define = {
-    /* MAP DEFAULT VALUES*/
+    /* NAVER MAP API VALUES*/
     DEFAULT_LOCATION: {
         latitude: 37.5666103,
         longitude: 126.9783882
@@ -21,7 +21,17 @@ const Define = {
         scrollWheel: true,
         keyboardShortcuts: true,
         disableDoubleClickZoom: false
-    }
+    },
+
+    /* TMAP MAP API VALUES */
+    TMAP_APP_KEY: "td01seMWLm12czMxGBVSD5exSc9JaoZO1Epqih7c",
+    REQUEST_URL: "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1",
+    REQ_COORD_TYPE: "WGS84GEO",                 // 출발지, 경유지, 목적지 좌표계 유형
+    RES_COORD_TYPE: "WGS84GEO",                 // 응답 좌표계 유형
+    WALKING_SPEED: 10,                          // 진행속도(Km/h)
+    SEARCH_OPTION: "0",                         // 경로 탐색 옵션 (0: 추천(default) / 4: 추천 + 대로 우선 / 10: 최단 / 30: 최단 거리 + 계단 제외)
+    START_NAME: "출발지",
+    END_NAME: "도착지"
 };
 
 export default Define;

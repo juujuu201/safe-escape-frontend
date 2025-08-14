@@ -29,7 +29,7 @@ export default class Util {
     static isEmptyObject(obj) {
         let result = false;
 
-        if (!obj && !(typeof obj === "object" && Object.keys(obj)?.length > 0)) {
+        if (!obj || (typeof obj === "object" && Object.keys(obj)?.length === 0)) {
             result = true;
         }
 
@@ -149,5 +149,12 @@ export default class Util {
         }
 
         return el.classList.contains(className);
+    }
+
+    static replaceResource(resource, variables) {
+        return resource.replace(/\$\{([^}]+)\}/g, (_, key) => {
+            key = key.trim();
+            return variables.hasOwnProperty(key) ? variables[key] : "";
+        });
     }
 }

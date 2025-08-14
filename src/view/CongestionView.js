@@ -4,7 +4,7 @@ import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
 import Define from "../common/Define.js";
 import Util from "../common/Utils.js";
-import {appModel, MenuButtonModel} from "../model/AppModel.js";
+import {appModel, MarkerModel, MenuButtonModel} from "../model/AppModel.js";
 import {SEMessageBar, SETextButton} from "../widgets/Widgets.js";
 import AppController from "../controller/AppController.js";
 
@@ -29,8 +29,9 @@ const _viewNames = Constants.VIEW_NAMES,
             _congestionButtonValues.RESET_EXIT,
             _congestionButtonValues.FINISH_EXIT
         ],
-        [`${_statusType.CONGESTION_SELECTED}`]: _defaultButtonGroup,
-        [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup
+        [`${_statusType.CONGESTION_SELECTED}`]: [..._defaultButtonGroup, ...[_congestionButtonValues.DELETE_CONGESTION]],
+        [`${_statusType.EXIT_SELECTED}`]: _defaultButtonGroup,
+        [`${_statusType.EXIT_SHELTER_SELECTED}`]: _defaultButtonGroup
     };
 
 export const CongestionSideBarView = () => {
@@ -66,6 +67,23 @@ export const CongestionSideBarView = () => {
                 appModel.setValue("selectedPolygon", null);
             }
 
+            appModel.setValue("status", _statusType.NONE);
+        } else if (status === _statusType.EXIT_SELECTED) {
+            if (appModel.selectedExit) {
+                appModel.selectedExit.deSelect();
+            }
+
+            appModel.markerTooltipModel.hide();
+
+            appModel.setValue("selectedExit", null);
+            appModel.setValue("routeInfo", {});
+            appModel.setValue("status", _statusType.NONE);
+        } else if (status === _statusType.EXIT_SHELTER_SELECTED) {
+            appModel.markerTooltipModel.hide();
+            appModel.removeRoutes();
+
+            appModel.setValue("selectedExit", null);
+            appModel.setValue("selectedShelter", null);
             appModel.setValue("status", _statusType.NONE);
         }
     }
@@ -116,10 +134,22 @@ export const CongestionSideBarView = () => {
                             messageValue = Resources.SETTING_EXIT;
                             break;
                         case _statusType.CONGESTION_SELECTED:
-                            if (value === _congestionButtonValues.RECOMMEND_EXIT) {
+                            if (value === _congestionButtonValues.RECOMMEND_EXIT || value === _congestionButtonValues.DELETE_CONGESTION) {
                                 isDisable = false;
                             }
                             messageValue = Resources.SELECTED_CONGESTION;
+                            break;
+                        case _statusType.EXIT_SELECTED:
+                            if (value === _congestionButtonValues.FIND_SHELTER) {
+                                isDisable = false;
+                            }
+                            messageValue = Resources.SELECTED_EXIT;
+                            break;
+                        case _statusType.EXIT_SHELTER_SELECTED:
+                            if (value === _congestionButtonValues.WALKING_DISTANCE) {
+                                isDisable = false;
+                            }
+                            messageValue = Resources.SELECTED_EXIT_SHELTER;
                             break;
                         case _statusType.NONE:
                             if (value === _congestionButtonValues.SET_CONGESTION) {
@@ -163,7 +193,7 @@ const CongestionMenuButton = (props) => {
 
     function _onClick(e) {
         let isEnableMap = false,
-            status;
+            status, selectedExit;
 
         switch (value) {
             // 혼잡 지역 설정하기
@@ -192,10 +222,26 @@ const CongestionMenuButton = (props) => {
 
             // 도보 거리 계산
             case _congestionButtonValues.WALKING_DISTANCE:
+                selectedExit = appModel.selectedExit;
+
+                if (selectedExit) {
+                    AppController.calcWalkingDistance(selectedExit, appModel.selectedShelter);
+                }
                 break;
 
             // 가까운 대피소 찾기
             case _congestionButtonValues.FIND_SHELTER:
+                selectedExit = appModel.selectedExit;
+
+                if (selectedExit) {
+                    const testModel = new MarkerModel({
+                        position: Util.getLocationObj(Define.DEFAULT_LOCATION, window.naver),
+                        naverMap: window.naver,
+                        map: appModel.map
+                    });
+
+                    AppController.calcWalkingDistance(selectedExit, testModel);
+                }
                 break;
 
             // 비상구 추천
@@ -231,6 +277,33 @@ const CongestionMenuButton = (props) => {
 
                 isEnableMap = true;
                 AppController.cancelExitSetting(map, true);
+                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
+                break;
+
+            // 혼잡 지역 삭제
+            case _congestionButtonValues.DELETE_CONGESTION:
+                // TODO: api 연결 필요
+                const polygonModel = appModel.selectedPolygon;
+                let idx;
+
+                // 폴리곤 내 마커 삭제
+                for (const marker of polygonModel.markers) {
+                    idx = appModel.markerModels.indexOf(marker);
+
+                    if (idx !== -1) {
+                        appModel.markerModels.splice(idx, 1);
+                        marker.hide();
+                    }
+                }
+
+                // 폴리곤 삭제
+                idx = appModel.polygonModels.indexOf(polygonModel);
+
+                if (idx !== -1) {
+                    appModel.polygonModels.splice(idx, 1);
+                    polygonModel.hide();
+                }
+
                 appModel.setValue("status", Constants.STATUS_TYPE.NONE);
                 break;
         }

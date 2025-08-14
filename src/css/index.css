@@ -45,6 +45,9 @@
 .map_tooltip .map_tooltip_content {display: flex; align-items: flex-start; margin: 15px 0;}
 .map_tooltip .map_tooltip_content img {width: 50px !important; height: 50px !important;}
 .map_tooltip .map_tooltip_content div:not(.image) {flex: 1;}
+.map_tooltip.text_only {background-color: var(--theme-color);}
+.map_tooltip.text_only .map_tooltip_content {margin: 0;}
+.map_tooltip.text_only .map_tooltip_content .MuiTypography-root {color: var(--white);}
 
 .message_bar {position: absolute; top: 15px; left: calc(5% / 2); width: calc(95% - 20px); max-height: 100px; background-color: var(--theme-color); opacity: 0.8; border-radius: var(--border-radius); z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;}
 .message_bar.invisible {display: none;}

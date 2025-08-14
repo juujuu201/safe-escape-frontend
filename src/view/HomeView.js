@@ -8,7 +8,8 @@ import {SEImage, SEText, SETextButton} from "../widgets/Widgets.js";
 
 const _naverMap = window.naver,
     _viewNames = Constants.VIEW_NAMES,
-    _menuNames = Constants.MENU_NAMES;
+    _menuNames = Constants.MENU_NAMES,
+    _statusType = Constants.STATUS_TYPE;
 
 export const HomeSideBarView = () => {
     const shelterList = [       /** TODO: 테스트용 */
@@ -47,7 +48,12 @@ export const HomeSideBarView = () => {
     }
 
     function _onClickShelter(e, markerModel) {
-        appModel.markerTooltipModel.show(markerModel);
+        if (appModel.status === _statusType.EXIT_SELECTED) {
+            appModel.setValue("selectedShelter", markerModel);
+            appModel.setValue("status", _statusType.EXIT_SHELTER_SELECTED);
+        } else {
+            appModel.markerTooltipModel.show(markerModel);
+        }
     }
 
     useEffect(() => {

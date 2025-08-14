@@ -26,8 +26,7 @@ const _naverMap = window.naver,
         [`${_mapOptionKeys.SCALE_CONTROL}`]: Define.SCALE_CONTROL
     },
     _congestionButtonValues = Constants.CONGESTION_BUTTON_VALUES,
-    _statusType = Constants.STATUS_TYPE,
-    _themeColor = Constants.COLORS.THEME;
+    _statusType = Constants.STATUS_TYPE;
 
 const DocumentView = () => {
     const [tabValue, setTabValue] = useState(_menuNames.HOME);
@@ -168,7 +167,29 @@ const MapAreaView = (props) => {
     }
 
     function _onClickExit(e, markerModel) {
-        appModel.markerTooltipModel.show(markerModel);
+        const {status, selectedExit} = appModel;
+        // TODO: 삭제 예정
+        const testModel = new MarkerModel({
+            position: Util.getLocationObj(Define.DEFAULT_LOCATION, window.naver),
+            naverMap: window.naver,
+            map: appModel.map
+        });
+
+        if (selectedExit) {
+            selectedExit.deSelect();
+        }
+
+        appModel.setValue("selectedExit", markerModel);
+
+        if (appModel.isSelectedStatus()) {
+            const targetModel = (status === _statusType.EXIT_SELECTED) ? testModel : appModel.selectedShelter;
+
+            if (markerModel && targetModel) {
+                AppController.calcWalkingDistance(markerModel, targetModel);
+            }
+        } else {
+            appModel.setValue("status", _statusType.EXIT_SELECTED);
+        }
     }
 
     function _onClickMap(e) {
@@ -331,19 +352,35 @@ const Map = (props) => {
 const MarkerTooltipView = () => {
     const {markerTooltipModel, centerModel} = appModel,
         isVisible = useModel(markerTooltipModel, "isVisible"),
-        style = useModel(markerTooltipModel, "style") || {};
+        isTextOnly = useModel(markerTooltipModel, "isTextOnly"),
+        style = useModel(markerTooltipModel, "style") || {},
+        contentRef = useRef(null),
+        [styleObj, setStyleObj] = useState(style || {});
 
     function _onClose() {
         AppController.closeMapTooltip(centerModel);
     }
+
+    useEffect(() => {
+        if (isVisible && contentRef.current && !Util.isEmptyObject(style)) {
+            const width = contentRef.current.offsetWidth,
+                height = contentRef.current.offsetHeight;
+
+            setStyleObj({
+                ...style,
+                left: `${parseFloat(style["left"]) - width / 2}px`,
+                top: `${parseFloat(style["top"]) - height}px`
+            });
+        }
+    }, [isVisible, style]);
 
     if (!markerTooltipModel || !markerTooltipModel.isVisible) {
         return null;
     }
 
     return (
-        <SEMapTooltip image={`${Constants.IMAGE_URL}marker_selected.svg`} isOpen={isVisible} style={style}
-                      title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={_onClose}/>
+        <SEMapTooltip ref={contentRef} image={`${Constants.IMAGE_URL}marker_selected.svg`} isOpen={isVisible} style={styleObj}
+                      isTextOnly={isTextOnly} title={markerTooltipModel.title} desc={markerTooltipModel.desc} onClose={_onClose}/>
     );
 };
 

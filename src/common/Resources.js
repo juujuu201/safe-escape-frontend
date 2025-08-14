@@ -11,13 +11,17 @@ const Resources = {
     SET_EXIT: "비상구 설정하기",
     RESET_EXIT: "비상구 초기화",
     FINISH_EXIT: "비상구 설정 완료",
+    DELETE_CONGESTION: "혼잡 지역 삭제",
 
     REFRESH: "새로고침",
     SETTING_CONGESTION_AREA: "혼잡 지역 설정 중",
     SETTING_EXIT: "비상구 설정 중",
     SELECTED_CONGESTION: "선택된 혼잡지역이 있습니다",
+    SELECTED_EXIT: "선택된 비상구가 있습니다",
+    SELECTED_EXIT_SHELTER: "선택된 비상구와 대피소가 있습니다.",
     CANCEL_SELECTION: "선택 취소",
     CANCEL_SETTING: "설정 취소",
+    DISTANCE_TIME_MSG: "총 거리 ${distance}km, 총 시간: ${time}분",
 
     LOGIN: "로그인",
     EMAIL: "이메일",
