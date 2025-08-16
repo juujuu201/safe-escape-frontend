@@ -26,7 +26,8 @@ const Constants = {
         INPUT_TEXT: "input_text",
         FORM_INPUT: "form_input",
         ALERT_DIALOG: "alert_dialog",
-        LIST: "list"
+        LIST: "list",
+        SWITCH: "switch"
     },
 
     /* MENU NAMES */
@@ -81,6 +82,7 @@ const Constants = {
     SELECTING_CLASS: "selecting",
     REMOVABLE_CLASS: "removable",
     SELECTED_CLASS: "selected",
+    HOVER_CLASS: "hover",
 
     LOGO_TAB_BUTTON: "logo_tab_button",
     MENU_TAB: "menu_tab",
@@ -96,6 +98,8 @@ const Constants = {
     LIST_ITEM_TITLE_DESC_CLASS: "list_item_title_desc",
     LIST_ITEM_SUB_DESC_CLASS: "list_item_sub_desc",
     TEXT_ONLY_CLASS: "text_only",
+    LOGOUT_BUTTON_CLASS: "logout_button",
+    SHELTER_SWITCH_CLASS: "shelter_switch",
 
     /* ID */
     MAP_AREA_ID: "map_area",
@@ -144,7 +148,10 @@ const Constants = {
         FINISH_EXIT: "finish_exit",
         DELETE_CONGESTION: "delete_congestion"
     },
-    MAX_CONGESTION_MARKER: 10
+    MAX_CONGESTION_MARKER: 10,
+    RESPONSE_CODE: {
+        OK: "ok"
+    }
 };
 
 export default Constants;

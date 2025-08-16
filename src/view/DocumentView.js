@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from "react";
+import {useNavigate} from "react-router-dom";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
 import Define from "../common/Define.js";
@@ -8,7 +9,7 @@ import {appModel, MarkerModel, PolygonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {HomeSideBarView} from "./HomeView.js";
 import {CongestionSideBarView} from "./CongestionView.js";
-import {SEImageButton, SETab, SEMapTooltip, SEIconButton, SEInputText} from "../widgets/Widgets.js";
+import {SEImageButton, SETab, SEMapTooltip, SEIconButton, SEInputText, SESwitch} from "../widgets/Widgets.js";
 import {Refresh} from "@mui/icons-material";
 
 const _naverMap = window.naver,
@@ -55,21 +56,18 @@ const DocumentView = () => {
 const MenuBarView = (props) => {
     const {selectedTab} = props,
         tabInfoList = [
-        {
-            name: _menuNames.HOME,
-            image: `${Constants.IMAGE_URL}home.svg`,
-            panel: <HomeSideBarView/>
-        },
-        {
-            name: _menuNames.CONGESTION,
-            image: `${Constants.IMAGE_URL}congestion.svg`,
-            panel: <CongestionSideBarView/>
-        }
-    ];
-
-    function _onClick(e) {
-
-    }
+            {
+                name: _menuNames.HOME,
+                image: `${Constants.IMAGE_URL}home.svg`,
+                panel: <HomeSideBarView/>
+            },
+            {
+                name: _menuNames.CONGESTION,
+                image: `${Constants.IMAGE_URL}congestion.svg`,
+                panel: <CongestionSideBarView/>
+            }
+        ],
+        navigate = useNavigate();
 
     function _onChange(e, tabName) {
         if (appModel.status === _statusType.CONGESTION_SETTING) {
@@ -79,17 +77,29 @@ const MenuBarView = (props) => {
         appModel.setValue("selectedTab", tabName);
     }
 
+    function _doLogout() {
+        // const response = Requester.doLogout();
+
+        // if (response.code === Constants.RESPONSE_CODE.OK) {
+            localStorage.removeItem("accessToken");
+            navigate("/");
+        // }
+    }
+
     return (
         <div className={_viewNames.MENU_BAR}>
-            <SEImageButton className={Constants.LOGO_TAB_BUTTON} image={`${Constants.IMAGE_URL}logo.svg`} onClick={_onClick}/>
+            <SEImageButton className={Constants.LOGO_TAB_BUTTON} image={`${Constants.IMAGE_URL}logo.svg`}/>
             <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME}
                    value={selectedTab} descVisible={true} onChange={_onChange}/>
+            <SEImageButton className={Constants.LOGOUT_BUTTON_CLASS} image={`${Constants.IMAGE_URL}user.svg`}
+                           desc={Resources.LOGOUT} onClick={_doLogout}/>
         </div>
     );
 };
 
 const TitleBarView = () => {
     const {map} = appModel,
+        showShelter = useModel(appModel, "showShelter"),
         [query, setQuery] = useState(""),
         [results, setResults] = useState([]),
         [searchModel, setSearchModel] = useState(null),
@@ -115,7 +125,28 @@ const TitleBarView = () => {
     }
 
     function _onClickListItem(item) {
-        map.setCenter(Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap));
+        let newSearchModel;
+
+        if (searchModel) {
+            searchModel.hide();
+        }
+
+        newSearchModel = new MarkerModel({
+            position: Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap),
+            naverMap: _naverMap,
+            map: appModel.map,
+            hasMarker: false
+        });
+
+        newSearchModel.show(true);
+        setSearchModel(newSearchModel);
+
+        AppController.setCrowdedInfo(map);
+        appModel.setValue("curAddress", item[Define.DESC_PROP_NAME]);
+    }
+
+    function _onToggleSwitch(e) {
+        appModel.setValue("showShelter", !showShelter);
     }
 
     useEffect(() => {
@@ -131,7 +162,10 @@ const TitleBarView = () => {
             <SEInputText inputClassName={Constants.SEARCH_INPUT_CLASS} value={query} placeholder={Resources.SEARCH_ADDRESS} onChange={_doSearch}
                          listClassName={Constants.SEARCH_LIST_BOX_CLASS} hasList={true} listData={results} onFocus={_doSearch}
                          onClickListItem={_onClickListItem} onListClose={() => setResults([])}
-                         keyProp={"id"} titleProp={"place_name"} descProp={"road_address_name"}/>
+                         keyProp={Define.KEY_PROP_NAME} titleProp={Define.TITLE_PROP_NAME} descProp={Define.DESC_PROP_NAME}/>
+            <div className={Constants.SHELTER_SWITCH_CLASS}>
+                <SESwitch isOn={showShelter} onChange={_onToggleSwitch} desc={Resources.SHELTER_SWITCH}/>
+            </div>
         </div>
     );
 };
@@ -140,9 +174,10 @@ const MapAreaView = (props) => {
     const {selectedTab} = props,
         {map} = appModel,
         status = useModel(appModel, "status"),
+        showShelter = useModel(appModel, "showShelter"),
 
         // 메인
-        markerModels = useModel(appModel, "markerModels"),
+        exitModels = useModel(appModel, "exitModels"),
         polygonModels = useModel(appModel, "polygonModels"),
         congestionModels = useModel(appModel, "congestionModels"),
         shelterModels = useModel(appModel, "shelterModels"),
@@ -171,7 +206,7 @@ const MapAreaView = (props) => {
                 hasMarker: false
             }));
 
-            /* TODO: 현재 위치에서 대피소 재검색 */
+            AppController.setCrowdedInfo(map);
         }
     }
 
@@ -242,6 +277,8 @@ const MapAreaView = (props) => {
         if (selectedTab === _menuNames.CONGESTION && appModel.isSettingStatus()) {
             const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onClickMap);
 
+            appModel.setValue("refreshBtnEnabled", false);
+
             return () => {
                 _naverMap.maps.Event.removeListener(clickListener);
             };
@@ -258,18 +295,6 @@ const MapAreaView = (props) => {
             }
         }
     }, [tempEdgeModels]);
-
-    useEffect(() => {
-        if (markerModels?.length > 0) {
-            for (const model of markerModels) {
-                if (model.isRemovable) {
-                    model.setValue("isRemovable", false);
-                }
-
-                model.show();
-            }
-        }
-    }, [markerModels]);
 
     useEffect(() => {
         if (tempExitModels?.length > 0) {
@@ -303,10 +328,14 @@ const MapAreaView = (props) => {
     useEffect(() => {
         if (shelterModels?.length > 0) {
             for (const model of shelterModels) {
-                model.show();
+                if (showShelter) {
+                    model.show();
+                } else {
+                    model.hide();
+                }
             }
         }
-    }, [shelterModels]);
+    }, [shelterModels, showShelter]);
 
     useEffect(() => {
         if (polygonModels?.length > 0) {
@@ -317,12 +346,31 @@ const MapAreaView = (props) => {
     }, [polygonModels]);
 
     useEffect(() => {
-        if (map) {
-            const mapBounds = Util.getVisibleBounds(map);
+        if (exitModels?.length > 0) {
+            for (const model of exitModels) {
+                if (model.isRemovable) {
+                    model.setValue("isRemovable", false);
+                }
 
-            if (mapBounds) {
-                AppController.setCrowdedInfo(map, mapBounds);
+                model.show();
             }
+        }
+    }, [exitModels]);
+
+    useEffect(() => {
+        if (map) {
+            const centerPos = map.getCenter();
+
+            // 혼잡 정보를 불러온다.
+            AppController.setCrowdedInfo(map);
+
+            // 중심 좌표 모델을 설정한다.
+            appModel.setValue("centerModel", new MarkerModel({
+                position: centerPos,
+                map,
+                naverMap: _naverMap,
+                hasMarker: false
+            }));
         }
     }, [map]);
 

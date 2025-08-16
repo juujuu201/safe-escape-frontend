@@ -205,82 +205,29 @@ export default class AppController {
         }
     }
 
-    static setCrowdedInfo(map, mapBounds) {
-        if (!mapBounds) {
-            return;
-        }
+    static async setCrowdedInfo(map) {
+        const {selectedTab, markerTooltipModel, selectedShelter, shelterModels, polygonModels, congestionModels} = appModel,
+            mapBounds = Util.getVisibleBounds(map),
+            {code, data} = await Requester.getCrowdedInfo(mapBounds);
 
-        const locationList = [],
-            {selectedTab, markerTooltipModel, selectedShelter} = appModel;
-        let crowdedInfo;
+        if (code === Constants.RESPONSE_CODE.OK) {
+            const {populationList, crowdedAreaList, shelterList} = data;
 
-        appModel.setValue("mapBounds", mapBounds);
-
-        // 정보 불러오기
-        // crowdedInfo = Requester.getCrowdedInfo(mapBounds);
-        crowdedInfo = {
-            "code": "ok",
-            "data": {
-                "populationList": [
-                    {
-                        "latitude": 37.5668876,
-                        "longitude": 126.9817638,
-                        "level": "CROWDED"
-                    },
-                    {
-                        "latitude": 37.439369,
-                        "longitude": 127.005608,
-                        "level": "VERY_CROWDED"
-                    },
-                    {
-                        "latitude": 37.511190,
-                        "longitude": 126.995815,
-                        "level": "NORMAL"
-                    },
-                    {
-                        "latitude": 37.517195,
-                        "longitude": 127.025203,
-                        "level": "FREE"
-                    },
-                    {
-                        "latitude": 37.576557,
-                        "longitude": 126.976794,
-                        "level": "VERY_CROWDED"
-                    }
-                ],
-                "crowdedAreaList": [
-                    {
-                        "id": 10,
-                        "locationList": [
-                            {"latitude": 37.572512, "longitude": 126.9761566},
-                            {"latitude": 37.5685662, "longitude": 126.9618229},
-                            {"latitude": 37.5610144, "longitude": 126.9580892},
-                            {"latitude": 37.5593474, "longitude": 126.9828514},
-                            {"latitude": 37.5585309, "longitude": 126.9898037},
-                            {"latitude": 37.5656068, "longitude": 126.9935802}
-                        ],
-                        "exitList": [
-                            {"latitude": 37.5656068, "longitude": 126.9851688},
-                            {"latitude": 37.5600618, "longitude": 126.9872288},
-                            {"latitude": 37.5635317, "longitude": 126.9644407}
-                        ]
-                    }
-                ],
-                "shelterList": [
-                    {
-                        "id": 1608,
-                        "name": "덕수초등학교 운동장",
-                        "address": "서울특별시 중구 덕수궁길 140(정동) 덕수초등학교 운동장",
-                        "latitude": 37.568468,
-                        "longitude": 126.974526
-                    }
-                ]
+            // 기존에 표시되고 있던 마커/폴리곤/혼잡 영역 제거
+            if (polygonModels) {
+                appModel.removePolygon();
             }
-        };
 
-        if (crowdedInfo?.data) {
-            const {populationList, crowdedAreaList, shelterList} = crowdedInfo.data,
-                markerModels = [];
+            if (shelterModels) {
+                appModel.removeShelter();
+            }
+
+            if (congestionModels) {
+                appModel.removeCongestion();
+            }
+
+            // 지도 영역 지정
+            appModel.setValue("mapBounds", mapBounds);
 
             if (populationList.length > 0) {
                 const congestionModels = [];
@@ -305,7 +252,7 @@ export default class AppController {
                     exitModels = [];
 
                 for (const crowdedArea of crowdedAreaList) {
-                    const {locationList, exitList} = crowdedArea,
+                    const {id, locationList, exitList} = crowdedArea,
                         edgeList = [];
                     let polygonModel;
 
@@ -343,10 +290,10 @@ export default class AppController {
                             });
 
                         exitModels.push(exitModel);
-                        markerModels.push(exitModel);
                     }
 
                     polygonModel = new PolygonModel({
+                        id,
                         map,
                         naverMap: _naverMap,
                         pathList: edgeList,
@@ -366,6 +313,7 @@ export default class AppController {
                     polygonModels.push(polygonModel);
                 }
 
+                appModel.setValue("exitModels", exitModels);
                 appModel.setValue("polygonModels", polygonModels);
             }
 
@@ -375,6 +323,7 @@ export default class AppController {
                 for (const shelter of shelterList) {
                     const {id, name, address, latitude, longitude} = shelter,
                         shelterModel = new MarkerModel({
+                            id,
                             position: Util.getLocationObj({latitude, longitude}, _naverMap),
                             title: name,
                             desc: address,
@@ -392,13 +341,10 @@ export default class AppController {
                         });
 
                     shelterModels.push(shelterModel);
-                    markerModels.push(shelterModel);
                 }
 
                 appModel.setValue("shelterModels", shelterModels);
             }
-
-            appModel.setValue("markerModels", markerModels);
         }
     }
 }

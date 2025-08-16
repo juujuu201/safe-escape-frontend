@@ -5,17 +5,17 @@ import Resources from "../common/Resources.js";
 import {appModel} from "../model/AppModel.js";
 import {SEImage, SEText, SETextButton} from "../widgets/Widgets.js";
 
-const _naverMap = window.naver,
-    _viewNames = Constants.VIEW_NAMES,
-    _menuNames = Constants.MENU_NAMES,
-    _statusType = Constants.STATUS_TYPE;
+const _viewNames = Constants.VIEW_NAMES,
+    _menuNames = Constants.MENU_NAMES;
 
 export const HomeSideBarView = () => {
     const shelterModels = useModel(appModel, "shelterModels"),
+        curAddress = useModel(appModel, "curAddress"),
         [shelterBtnList, setShelterBtnList] = useState([]);
 
     function _onClickButton(e, markerModel) {
         appModel.setValue("centerModel", markerModel);
+        appModel.markerTooltipModel.show(markerModel);
     }
 
     useEffect(() => {
@@ -24,10 +24,10 @@ export const HomeSideBarView = () => {
 
             for (const model of shelterModels) {
                 // 사이드바 내 대피소 목록 표시
-                const {modelId, title, desc} = model;
+                const {title, desc} = model;
 
                 btnList.push(
-                    <SETextButton key={modelId} title={title} desc={desc} onClick={e => _onClickButton(e, model)}/>
+                    <SETextButton key={model.modelId()} title={title} desc={desc} onClick={e => _onClickButton(e, model)}/>
                 );
             }
 
@@ -39,7 +39,7 @@ export const HomeSideBarView = () => {
         <div className={`${_menuNames.HOME} ${_viewNames.SIDE_BAR}`}>
             <SEImage image={`${Constants.IMAGE_URL}shelter.svg`}/>
             <SEText className={Constants.TITLE_CLASS} desc={Resources.NEARBY_SHELTER} color={Constants.COLORS.RED}/>
-            <SEText className={Constants.SUBTITLE_CLASS} desc="강북구 삼각산로"/> {/** TODO: 테스트용 */}
+            {curAddress && <SEText className={Constants.SUBTITLE_CLASS} desc={curAddress}/>}
             <div className={Constants.SHELTER_LIST_CLASS}>
                 {shelterBtnList}
             </div>

@@ -7,12 +7,14 @@ import Util from "../common/Utils.js";
 import {appModel, MarkerModel, MenuButtonModel} from "../model/AppModel.js";
 import {SEMessageBar, SETextButton} from "../widgets/Widgets.js";
 import AppController from "../controller/AppController.js";
+import * as Requester from "../api/Requester.js";
 
 const _viewNames = Constants.VIEW_NAMES,
     _menuNames = Constants.MENU_NAMES,
     _congestionButtonValues = Constants.CONGESTION_BUTTON_VALUES,
     _statusType = Constants.STATUS_TYPE,
     _mapMoveEnableOptions = Define.MAP_MOVE_ENABLE_OPTIONS,
+    _responseCode = Constants.RESPONSE_CODE,
     _defaultButtonGroup = [
         _congestionButtonValues.SET_CONGESTION,
         _congestionButtonValues.WALKING_DISTANCE,
@@ -196,13 +198,13 @@ const CongestionMenuButton = (props) => {
         isVisible = useModel(model, "isVisible"),
         isDisabled = useModel(model, "isDisabled");
 
-    function _onClick(e) {
+    async function _onClick(e) {
         let isEnableMap = false,
             status, selectedExit;
 
         switch (value) {
             // 혼잡 지역 설정하기
-            case _congestionButtonValues.SET_CONGESTION:
+            case _congestionButtonValues.SET_CONGESTION: {
                 status = _statusType.CONGESTION_SETTING;
 
                 // 혼잡 지역을 설정하는 동안 지도를 움직이지 못하도록 설정한다.
@@ -219,23 +221,26 @@ const CongestionMenuButton = (props) => {
                 // 마커 툴팁이 열려있었다면 닫는다.
                 AppController.closeMapTooltip();
                 break;
+            }
 
             // 혼잡 지역 초기화
-            case _congestionButtonValues.CANCEL_CONGESTION_SETTING:
+            case _congestionButtonValues.CANCEL_CONGESTION_SETTING: {
                 AppController.cancelCongestionSetting(map);
                 break;
+            }
 
             // 도보 거리 계산
-            case _congestionButtonValues.WALKING_DISTANCE:
+            case _congestionButtonValues.WALKING_DISTANCE: {
                 selectedExit = appModel.selectedExit;
 
                 if (selectedExit) {
                     AppController.calcWalkingDistance(selectedExit, appModel.selectedShelter);
                 }
                 break;
+            }
 
             // 가까운 대피소 찾기
-            case _congestionButtonValues.FIND_SHELTER:
+            case _congestionButtonValues.FIND_SHELTER: {
                 selectedExit = appModel.selectedExit;
 
                 if (selectedExit) {
@@ -248,9 +253,10 @@ const CongestionMenuButton = (props) => {
                     AppController.calcWalkingDistance(selectedExit, testModel);
                 }
                 break;
+            }
 
             // 비상구 추천
-            case _congestionButtonValues.RECOMMEND_EXIT:
+            case _congestionButtonValues.RECOMMEND_EXIT: {
                 const selectedPolygon = appModel.selectedPolygon;
 
                 if (selectedPolygon && selectedPolygon.markers?.length > 0) {
@@ -259,58 +265,51 @@ const CongestionMenuButton = (props) => {
                     }
                 }
                 break;
+            }
 
             // 비상구 설정하기
-            case _congestionButtonValues.SET_EXIT:
+            case _congestionButtonValues.SET_EXIT: {
                 status = _statusType.EXIT_SETTING;
                 break;
+            }
 
             // 비상구 초기화
-            case _congestionButtonValues.RESET_EXIT:
+            case _congestionButtonValues.RESET_EXIT: {
                 AppController.cancelExitSetting(map);
                 break;
+            }
 
             // 비상구 설정 완료
-            case _congestionButtonValues.FINISH_EXIT:
-                // TODO: api 연결 필요
-                const {tempPolygonModel, tempExitModels} = appModel;
+            case _congestionButtonValues.FINISH_EXIT: {
+                const {tempPolygonModel, tempExitModels} = appModel,
+                    {code} = await Requester.saveCrowdedArea(tempPolygonModel.pathList, tempExitModels);
 
-                appModel.setValue("markerModels", [...appModel.markerModels, ...tempExitModels]);
+                if (code === _responseCode.OK) {
+                    const exitModels = [...appModel.exitModels, ...tempExitModels],
+                        polygonModels = [...appModel.polygonModels, ...[tempPolygonModel]];
 
-                tempPolygonModel.addMarkers(tempExitModels);
-                appModel.setValue("polygonModels", [...appModel.polygonModels, ...[tempPolygonModel]]);
+                    tempPolygonModel.addMarkers(tempExitModels);
+                    appModel.setValue("exitModels", exitModels);
+                    appModel.setValue("polygonModels", polygonModels);
 
-                isEnableMap = true;
-                AppController.cancelExitSetting(map, true);
-                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
+                    isEnableMap = true;
+                    AppController.cancelExitSetting(map, true);
+                    appModel.setValue("status", Constants.STATUS_TYPE.NONE);
+                }
                 break;
+            }
 
             // 혼잡 지역 삭제
-            case _congestionButtonValues.DELETE_CONGESTION:
-                // TODO: api 연결 필요
-                const polygonModel = appModel.selectedPolygon;
-                let idx;
+            case _congestionButtonValues.DELETE_CONGESTION: {
+                const selectedPolygon = appModel.selectedPolygon,
+                    {code} = await Requester.deleteCrowdedArea(selectedPolygon.id);
 
-                // 폴리곤 내 마커 삭제
-                for (const marker of polygonModel.markers) {
-                    idx = appModel.markerModels.indexOf(marker);
-
-                    if (idx !== -1) {
-                        appModel.markerModels.splice(idx, 1);
-                        marker.hide();
-                    }
+                if (code === _responseCode.OK) {
+                    appModel.removePolygon(selectedPolygon);
+                    appModel.setValue("status", Constants.STATUS_TYPE.NONE);
                 }
-
-                // 폴리곤 삭제
-                idx = appModel.polygonModels.indexOf(polygonModel);
-
-                if (idx !== -1) {
-                    appModel.polygonModels.splice(idx, 1);
-                    polygonModel.hide();
-                }
-
-                appModel.setValue("status", Constants.STATUS_TYPE.NONE);
                 break;
+            }
         }
 
         if (status) {

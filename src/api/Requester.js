@@ -1,32 +1,31 @@
-import ApiClient from "./ApiClient";
+import ApiClient, {requestWrapper} from "./ApiClient";
 import Util from "../common/Utils";
 
 export const doLogin = (email, password) => {
-    return ApiClient.post("/auth/login", {email, password});
+    return requestWrapper(ApiClient.post("/auth/login", {email, password}));
 };
 
 export const doLogout = () => {
-    return ApiClient.post("/auth/logout");
+    return requestWrapper(ApiClient.post("/auth/logout"));
 };
 
 export const doRefresh = (refreshToken) => {
-    return ApiClient.post("/auth/refresh", {refreshToken});
+    return requestWrapper(ApiClient.post("/auth/refresh", {refreshToken}));
 };
 
-export const saveCrowdedArea = (edgeModels, exitModels) => {
-    if (!(edgeModels?.length > 0 && exitModels?.length > 0)) {
+export const saveCrowdedArea = (edgeList, exitModels) => {
+    if (!(edgeList?.length > 0 && exitModels?.length > 0)) {
         return;
     }
 
     const crowdedLocationList = [],
         exitLocationList = [];
+    let resultObj = {};
 
-    for (const edge of edgeModels) {
-        const position = edge.position;
-
+    for (const edge of edgeList) {
         crowdedLocationList.push({
-            latitude: position.lat(),
-            longitude: position.lng()
+            latitude: String(edge.lat()),
+            longitude: String(edge.lng())
         });
     }
 
@@ -34,12 +33,17 @@ export const saveCrowdedArea = (edgeModels, exitModels) => {
         const position = exit.position;
 
         exitLocationList.push({
-            latitude: position.lat(),
-            longitude: position.lng()
+            latitude: String(position.lat()),
+            longitude: String(position.lng())
         });
     }
 
-    return ApiClient.post("/crowded-area", {crowdedLocationList, exitLocationList})
+    resultObj = {
+        crowdedLocationList,
+        exitLocationList
+    };
+
+    return requestWrapper(ApiClient.post("/crowded-area", resultObj));
 };
 
 export const deleteCrowdedArea = (crowdedId) => {
@@ -47,7 +51,7 @@ export const deleteCrowdedArea = (crowdedId) => {
         return;
     }
 
-    return ApiClient.delete(`/crowded-area/${crowdedId}`);
+    return requestWrapper(ApiClient.delete(`/crowded-area/${crowdedId}`));
 };
 
 export const getNearbyShelter = (exitId) => {
@@ -55,7 +59,7 @@ export const getNearbyShelter = (exitId) => {
         return;
     }
 
-    return ApiClient.get(`/exits/${exitId}/shelter/nearby`);
+    return requestWrapper(ApiClient.get(`/exits/${exitId}/shelter/nearby`));
 }
 
 export const getCrowdedInfo = (mapBounds) => {
@@ -69,5 +73,5 @@ export const getCrowdedInfo = (mapBounds) => {
         locationList.push(`latitudes=${coord.lat()}&longitudes=${coord.lng()}`);
     }
 
-    return ApiClient.get(`/main?${locationList.join("&")}`);
+    return requestWrapper(ApiClient.get(`/main?${locationList.join("&")}`));
 }

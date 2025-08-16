@@ -3,7 +3,10 @@ import axios from "axios";
 // Axios 인스턴스 생성
 const ApiClient = axios.create({
     baseURL: "https://terrapin-fresh-haddock.ngrok-free.app/admin",
-    timeout: 5000
+    timeout: 10000,
+    headers: {
+        "ngrok-skip-browser-warning": true
+    }
 });
 
 // 요청 인터셉터
@@ -28,23 +31,37 @@ ApiClient.interceptors.request.use(
 
 // 응답 인터셉터
 ApiClient.interceptors.response.use(
-    response => {
-        return response.data;
-    },
+    response => response.data,
     error => {
         if (error.response) {
             console.error("API Error:", error.response.status, error.response.data);
 
             if (error.response.status === 401) {
-                // 인증 실패 시 처리 (로그아웃, 리다이렉트 등)
-                console.warn("로그인 만료됨. 다시 로그인해주세요.");
+                console.warn("로그인 만료");
             }
         } else {
             console.error("Network Error:", error.message);
         }
-
         return Promise.reject(error);
     }
 );
+
+// 공통 wrapper
+export const requestWrapper = async (axiosPromise) => {
+    try {
+        const response = await axiosPromise,
+            {code, data} = response;
+
+        return {
+            code: code,
+            data
+        };
+    } catch (error) {
+        return {
+            code: false,
+            error
+        };
+    }
+};
 
 export default ApiClient;

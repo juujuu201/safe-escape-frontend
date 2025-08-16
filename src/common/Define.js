@@ -31,7 +31,10 @@ const Define = {
     WALKING_SPEED: 10,                          // 진행속도(Km/h)
     SEARCH_OPTION: "0",                         // 경로 탐색 옵션 (0: 추천(default) / 4: 추천 + 대로 우선 / 10: 최단 / 30: 최단 거리 + 계단 제외)
     START_NAME: "출발지",
-    END_NAME: "도착지"
+    END_NAME: "도착지",
+    KEY_PROP_NAME: "id",
+    TITLE_PROP_NAME: "place_name",
+    DESC_PROP_NAME: "road_address_name"
 };
 
 export default Define;

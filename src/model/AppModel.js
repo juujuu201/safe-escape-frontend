@@ -100,11 +100,14 @@ class AppModel extends Model {
 
         this.map = null;
         this.mapBounds = null;
+        this.curAddress = "";
+
         this.centerModel = null;
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
+        this.showShelter = true;
 
-        this.markerModels = [];
+        this.exitModels = [];
         this.polygonModels = [];
         this.congestionModels = [];
         this.shelterModels = [];
@@ -121,14 +124,6 @@ class AppModel extends Model {
         this.tempEdgeModels = [];
         this.tempPolygonModel = null;
         this.tempExitModels = [];
-    }
-
-    removeMarker(model) {
-        const idx = this.markerModels.indexOf(model);
-
-        if (idx !== -1) {
-            this.markerModels.splice(idx, 1);
-        }
     }
 
     isSettingStatus() {
@@ -153,6 +148,68 @@ class AppModel extends Model {
 
         this.setValue("routeInfo", {});
     }
+
+    removePolygon(polygonModel) {
+        // 인자를 지정하지 않으면 모든 polygonModel을 삭제한다.
+        if (polygonModel) {
+            let idx;
+
+            // 폴리곤 내 마커 삭제
+            for (const marker of polygonModel.markers) {
+                idx = appModel.exitModels.indexOf(marker);
+
+                if (idx !== -1) {
+                    appModel.exitModels.splice(idx, 1);
+                    marker.hide();
+                }
+            }
+
+            // 폴리곤 삭제
+            idx = appModel.polygonModels.indexOf(polygonModel);
+
+            if (idx !== -1) {
+                appModel.polygonModels.splice(idx, 1);
+                polygonModel.hide();
+            }
+        } else {
+            for (const polygon of appModel.polygonModels) {
+                for (const marker of polygon.markers) {
+                    marker.hide();
+                }
+
+                polygon.hide();
+            }
+
+            appModel.setValue("polygonModels", []);
+            appModel.setValue("exitModels", []);
+        }
+    }
+
+    removeShelter(shelterModel) {
+        // 인자를 지정하지 않으면 모든 shelterModel을 삭제한다.
+        if (shelterModel) {
+            const idx = appModel.shelterModels.indexOf(shelterModel);
+
+            if (idx !== -1) {
+                appModel.shelterModels.splice(idx, 1);
+                shelterModel.hide();
+            }
+        } else {
+            for (const shelter of appModel.shelterModels) {
+                shelter.hide();
+            }
+
+            appModel.setValue("shelterModels", []);
+        }
+    }
+
+    removeCongestion() {
+        for (const congestion of appModel.congestionModels) {
+            congestion.hide();
+        }
+
+        appModel.setValue("congestionModels", []);
+    }
 }
 
 export class MarkerModel extends Model {
@@ -160,12 +217,13 @@ export class MarkerModel extends Model {
         super();
 
         const {position, icon, iconSize, selectedColor, title, desc, onClick, onMouseOver, onMouseOut,
-            map, naverMap, hasMarker, removable} = options;
+            map, naverMap, hasMarker, removable, id} = options;
 
         if (!(position && map)) {
             return;
         }
 
+        this.id = id ?? this.modelId();
         this._svgEl = null;
         this._hasMarker = hasMarker ?? true;
         this._icon = (this._hasMarker ? (icon ?? _defaultMarkerIcon) : null);
@@ -352,6 +410,10 @@ export class MarkerModel extends Model {
     }
 
     async show(isCenter = false) {
+        if (document.body.contains(this.element)) {
+            return;
+        }
+
         if (this._icon) {
             await this.loadSVGIcon(this._icon);
         }
@@ -433,8 +495,9 @@ export class PolygonModel extends Model {
     constructor(options = {}) {
         super();
 
-        const {position, onClick, map, naverMap, pathList, strokeColor, fillColor, fillOpacity} = options;
+        const {position, onClick, map, naverMap, pathList, strokeColor, fillColor, fillOpacity, markers, id} = options;
 
+        this.id = id
         this.polygon = null;
         this.element = null;
 
@@ -448,7 +511,7 @@ export class PolygonModel extends Model {
         this.map = map;
         this.naverMap = naverMap ?? window.naver;
 
-        this.markers = [];
+        this.markers = markers ?? [];
     }
 
     show(isOnlyShow = false) {
@@ -577,13 +640,19 @@ export class CongestionModel extends Model {
         this.area = new this.naverMap.maps.Circle({
             center: this.position,
             map: this.map,
-            radius: 1000,
+            radius: 250,
             fillColor: Constants.COLORS.CROWDED_LEVEL[this.level.toUpperCase()],
             fillOpacity: 0.4,
             strokeOpacity: 0
         });
 
         this.area.setMap(this.map)
+    }
+
+    hide() {
+        if (this.area) {
+            this.area.setMap(null);
+        }
     }
 }
 

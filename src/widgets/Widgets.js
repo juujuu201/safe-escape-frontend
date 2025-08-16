@@ -1,10 +1,10 @@
 import {useRef, useState, useEffect} from "react";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
-import Util from "../common/Utils.js";
 import {Box, ButtonBase, IconButton, Tab, Tabs, Tooltip, Typography, FormControl, FormLabel, Input, Dialog, DialogContent,
-    List, ListItemButton, ListItemText, ClickAwayListener} from "@mui/material";
+    List, ListItemButton, ListItemText, ClickAwayListener, Switch} from "@mui/material";
 import {Close} from "@mui/icons-material";
+import Util from "../common/Utils.js";
 
 const _widgetNames = Constants.WIDGET_NAMES;
 
@@ -59,12 +59,18 @@ export const SEImage = (props) => {
 };
 
 export const SEImageButton = (props) => {
-    const {image, onClick, altText, className} = props;
+    const {image, onClick, altText, desc, className} = props;
+    let descEl;
+
+    if (desc) {
+        descEl = <SEText className={Constants.DESCRIPTION_CLASS} desc={desc}/>;
+    }
 
     return (
         <div className={_extendClassName(_widgetNames.IMAGE_BUTTON, className)}>
             <ButtonBase onClick={onClick}>
                 <Box component="img" src={image} alt={altText}/>
+                {descEl}
             </ButtonBase>
         </div>
     );
@@ -341,7 +347,8 @@ export const SEInputText = (props) => {
         } = props,
         inputRef = useRef(null),
         listRef = useRef(null),
-        [isFocus, setFocus] = useState(false);
+        [isFocus, setFocus] = useState(false),
+        [selectedIndex, setSelectedIndex] = useState(0);
     let listChildren = null;
 
     function _onClose(e) {
@@ -370,8 +377,20 @@ export const SEInputText = (props) => {
     }
 
     function _onKeyDown(e) {
-        if (e.key === "Escape" && isFocus) {
-            _onClose();
+        if (isFocus) {
+            const {key} = e;
+
+            if (key === "Escape") {
+                _onClose();
+            } else if (key === "Enter") {
+                _onClickListItem(e, listData[selectedIndex]);
+            } else if (Util.isStartsWith(key, "Arrow")) {
+                if (key === "ArrowDown") {
+                    setSelectedIndex(prev => Math.min(prev + 1, listData.length - 1));
+                } else if (key === "ArrowUp") {
+                    setSelectedIndex(prev => Math.max(prev - 1, 0));
+                }
+            }
         }
     }
 
@@ -383,14 +402,18 @@ export const SEInputText = (props) => {
             document.removeEventListener("keydown", _onKeyDown);
             document.removeEventListener("mousedown", _onClickOutside);
         };
-    }, [isFocus]);
+    }, [isFocus, selectedIndex, listData]);
+
+    useEffect(() => {
+        if (listData.length > 0) setSelectedIndex(0);
+    }, [listData]);
 
     if (hasList && listData.length > 0) {
         listChildren = (
             <ClickAwayListener onClickAway={_onClickOutside}>
                 <List className={_extendClassName(_widgetNames.LIST, listClassName)} ref={listRef} tabIndex={0}>
-                    {listData.map(data => (
-                        <ListItemButton key={data[keyProp]} onClick={e => _onClickListItem(e, data)}>
+                    {listData.map((data, idx) => (
+                        <ListItemButton key={data[keyProp]} className={idx === selectedIndex ? Constants.HOVER_CLASS : ""} onClick={e => _onClickListItem(e, data)}>
                             <ListItemText className={Constants.LIST_ITEM_TITLE_DESC_CLASS}>{data[titleProp]}</ListItemText>
                             {data[descProp] && <ListItemText className={Constants.LIST_ITEM_SUB_DESC_CLASS}>{data[descProp]}</ListItemText>}
                         </ListItemButton>
@@ -407,4 +430,22 @@ export const SEInputText = (props) => {
             {listChildren}
         </div>
     )
+};
+
+export const SESwitch = (props) => {
+    const {
+        isOn = true,
+        desc, className, onChange
+    } = props;
+
+    function _onChange(e) {
+        onChange && onChange();
+    }
+
+    return (
+        <div className={_extendClassName(_widgetNames.SWITCH, className)}>
+            <SEText className={Constants.DESCRIPTION_CLASS} desc={desc}/>
+            <Switch checked={isOn} onChange={_onChange}/>
+        </div>
+    );
 };

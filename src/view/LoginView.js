@@ -1,27 +1,28 @@
 import {useState} from "react";
+import {useNavigate} from "react-router-dom";
 import Constants from "../common/Constants.js";
 import {SEAlertDialog, SEFormInput, SETextButton} from "../widgets/Widgets.js";
 import Resources from "../common/Resources.js";
 import {Box} from "@mui/material";
+import * as Requester from "../api/Requester.js";
 
 const _viewNames = Constants.VIEW_NAMES;
 
 const LoginView = () => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false),
+        navigate = useNavigate();
 
-    function _doLogin(e) {
-        let isSuccess = false,
-            data, email, password;
+    async function _doLogin(e) {
         e.preventDefault();
 
-        data = new FormData(e.currentTarget);
-        email = data.get(Constants.INPUT_NAMES.EMAIL);
-        password = data.get(Constants.INPUT_NAMES.PASSWORD);
+        const formData = new FormData(e.currentTarget),
+            email = formData.get(Constants.INPUT_NAMES.EMAIL),
+            password = formData.get(Constants.INPUT_NAMES.PASSWORD),
+            {code, data, error} = await Requester.doLogin(email, password);
 
-        // isSuccess = Requester.doLogin(email, password);
-
-        if (isSuccess) {
-
+        if (code === Constants.RESPONSE_CODE.OK) {
+            localStorage.setItem("accessToken", data.accessToken);
+            navigate("/main");
         } else {
             setOpen(true);
         }

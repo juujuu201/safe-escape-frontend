@@ -1,7 +1,10 @@
 const Resources = {
     HOME: "홈",
     CONGESTION: "혼잡도",
+    LOGOUT: "로그아웃",
     SEARCH_ADDRESS: "주소 검색",
+    SHELTER_SWITCH: "대피소 노출",
+
     NEARBY_SHELTER: "주변 대피소",
     SET_CONGESTION: "혼잡 지역 설정하기",
     WALKING_DISTANCE: "도보 거리 계산",
