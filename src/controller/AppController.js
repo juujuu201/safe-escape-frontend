@@ -7,7 +7,8 @@ import * as Requester from "../api/Requester";
 
 const _naverMap = window.naver,
     _statusType = Constants.STATUS_TYPE,
-    _tabNames = Constants.MENU_NAMES;
+    _tabNames = Constants.MENU_NAMES,
+    _responseCode = Constants.RESPONSE_CODE;
 
 export default class AppController {
     static closeMapTooltip(centerModel = appModel.centerModel) {
@@ -179,14 +180,9 @@ export default class AppController {
         .catch(err => console.error(err));
     }
 
-    static setSelectedExit(e, markerModel) {
-        const {status, selectedExit} = appModel;
-        // TODO: 삭제 예정
-        const testModel = new MarkerModel({
-            position: Util.getLocationObj(Define.DEFAULT_LOCATION, window.naver),
-            naverMap: window.naver,
-            map: appModel.map
-        });
+    static async setSelectedExit(e, markerModel) {
+        const {status, selectedExit} = appModel,
+            {code, data} = await Requester.getNearbyShelter(markerModel.id);
 
         if (selectedExit) {
             selectedExit.deSelect();
@@ -194,14 +190,20 @@ export default class AppController {
 
         appModel.setValue("selectedExit", markerModel);
 
-        if (appModel.isSelectedStatus()) {
-            const targetModel = (status === _statusType.EXIT_SELECTED) ? testModel : appModel.selectedShelter;
+        if (code === _responseCode.OK) {
+            const shelterModel = appModel.getShelterModel(data.id);
 
-            if (markerModel && targetModel) {
-                AppController.calcWalkingDistance(markerModel, targetModel);
+            if (shelterModel) {
+                if (appModel.isSelectedStatus()) {
+                    const targetModel = (status === _statusType.EXIT_SELECTED) ? shelterModel : appModel.selectedShelter;
+
+                    if (markerModel && targetModel) {
+                        AppController.calcWalkingDistance(markerModel, targetModel);
+                    }
+                } else {
+                    appModel.setValue("status", _statusType.EXIT_SELECTED);
+                }
             }
-        } else {
-            appModel.setValue("status", _statusType.EXIT_SELECTED);
         }
     }
 
@@ -210,7 +212,7 @@ export default class AppController {
             mapBounds = Util.getVisibleBounds(map),
             {code, data} = await Requester.getCrowdedInfo(mapBounds);
 
-        if (code === Constants.RESPONSE_CODE.OK) {
+        if (code === _responseCode.OK) {
             const {populationList, crowdedAreaList, shelterList} = data;
 
             // 기존에 표시되고 있던 마커/폴리곤/혼잡 영역 제거
@@ -252,7 +254,8 @@ export default class AppController {
                     exitModels = [];
 
                 for (const crowdedArea of crowdedAreaList) {
-                    const {id, locationList, exitList} = crowdedArea,
+                    const {locationList, exitList} = crowdedArea,
+                        polygonId = crowdedArea.id,
                         edgeList = [];
                     let polygonModel;
 
@@ -266,8 +269,9 @@ export default class AppController {
                     }
 
                     for (const exit of exitList) {
-                        const {latitude, longitude} = exit,
+                        const {id, latitude, longitude} = exit,
                             exitModel = new MarkerModel({
+                                id,
                                 map,
                                 naverMap: _naverMap,
                                 position: Util.getLocationObj({latitude, longitude}),
@@ -293,7 +297,7 @@ export default class AppController {
                     }
 
                     polygonModel = new PolygonModel({
-                        id,
+                        id: polygonId,
                         map,
                         naverMap: _naverMap,
                         pathList: edgeList,

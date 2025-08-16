@@ -210,6 +210,10 @@ class AppModel extends Model {
 
         appModel.setValue("congestionModels", []);
     }
+
+    getShelterModel(shelterId) {
+        return this.shelterModels.find(model => model.id === shelterId) ?? null;
+    }
 }
 
 export class MarkerModel extends Model {

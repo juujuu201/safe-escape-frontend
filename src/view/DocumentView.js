@@ -9,6 +9,7 @@ import {appModel, MarkerModel, PolygonModel} from "../model/AppModel.js";
 import AppController from "../controller/AppController.js";
 import {HomeSideBarView} from "./HomeView.js";
 import {CongestionSideBarView} from "./CongestionView.js";
+import * as Requester from "../api/Requester.js";
 import {SEImageButton, SETab, SEMapTooltip, SEIconButton, SEInputText, SESwitch} from "../widgets/Widgets.js";
 import {Refresh} from "@mui/icons-material";
 
@@ -77,13 +78,13 @@ const MenuBarView = (props) => {
         appModel.setValue("selectedTab", tabName);
     }
 
-    function _doLogout() {
-        // const response = Requester.doLogout();
+    async function _doLogout() {
+        const response = await Requester.doLogout();
 
-        // if (response.code === Constants.RESPONSE_CODE.OK) {
+        if (response.code === Constants.RESPONSE_CODE.OK) {
             localStorage.removeItem("accessToken");
             navigate("/");
-        // }
+        }
     }
 
     return (

@@ -3,7 +3,7 @@ import axios from "axios";
 // Axios 인스턴스 생성
 const ApiClient = axios.create({
     baseURL: "https://terrapin-fresh-haddock.ngrok-free.app/admin",
-    timeout: 10000,
+    timeout: 30000,
     headers: {
         "ngrok-skip-browser-warning": true
     }

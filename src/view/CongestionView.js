@@ -4,7 +4,7 @@ import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
 import Define from "../common/Define.js";
 import Util from "../common/Utils.js";
-import {appModel, MarkerModel, MenuButtonModel} from "../model/AppModel.js";
+import {appModel, MenuButtonModel} from "../model/AppModel.js";
 import {SEMessageBar, SETextButton} from "../widgets/Widgets.js";
 import AppController from "../controller/AppController.js";
 import * as Requester from "../api/Requester.js";
@@ -242,16 +242,7 @@ const CongestionMenuButton = (props) => {
             // 가까운 대피소 찾기
             case _congestionButtonValues.FIND_SHELTER: {
                 selectedExit = appModel.selectedExit;
-
-                if (selectedExit) {
-                    const testModel = new MarkerModel({
-                        position: Util.getLocationObj(Define.DEFAULT_LOCATION, window.naver),
-                        naverMap: window.naver,
-                        map: appModel.map
-                    });
-
-                    AppController.calcWalkingDistance(selectedExit, testModel);
-                }
+                AppController.setSelectedExit(e, selectedExit);
                 break;
             }
 
