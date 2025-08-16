@@ -134,10 +134,11 @@ export const SEIconButton = (props) => {
 export const SETab = (props) => {
     const {
             descVisible = false,
-            tabInfoList, direction, defaultTab, className, onChange
+            tabInfoList, direction, defaultTab, className, onChange, value
         } = props,
         tabNameList = tabInfoList.map(tab => tab.name),
-        [curTabIdx, setTabIdx] = useState(tabNameList.indexOf(defaultTab) ?? -1),
+        [internalIdx, setInternalIdx] = useState(Math.max(0, tabNameList.indexOf(defaultTab))),
+        curTabIdx = Math.max(tabNameList.indexOf(value), internalIdx),
         tabList = [];
     let classList = _getClassList(className) || [],
         tabPanel;
@@ -193,7 +194,9 @@ export const SETab = (props) => {
             return;
         }
 
-        setTabIdx(curIdx);
+        if (!value) {
+            setInternalIdx(curIdx);
+        }
     }
 
     return (

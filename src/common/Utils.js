@@ -157,4 +157,24 @@ export default class Util {
             return variables.hasOwnProperty(key) ? variables[key] : "";
         });
     }
+
+    static getVisibleBounds(map) {
+        if (!map) {
+            return null;
+        }
+
+        const bounds = map.getBounds(),
+            sw = bounds._sw,
+            ne = bounds._ne,
+            nw = this.getLocationObj({
+                latitude: ne.lat(),
+                longitude: sw.lng()
+            }),
+            se = this.getLocationObj({
+                latitude: sw.lat(),
+                longitude: ne.lng()
+            });
+
+        return {sw, ne, nw, se};
+    }
 }

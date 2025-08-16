@@ -71,6 +71,10 @@ class Model {
         this._modelId = `model_${_modelIdCounter++}`; // 고유 ID 생성
     }
 
+    modelId() {
+        return this._modelId;
+    }
+
     getEventKey(key) {
         return `${this._modelId}:${key}`; // 구독 키 예: "model_1:isVisible"
     }
@@ -92,12 +96,18 @@ class AppModel extends Model {
     constructor() {
         super();
 
+        this.selectedTab = Constants.MENU_NAMES.HOME;
+
         this.map = null;
+        this.mapBounds = null;
         this.centerModel = null;
-        this.markerModels = [];
-        this.polygonModels = [];
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
+
+        this.markerModels = [];
+        this.polygonModels = [];
+        this.congestionModels = [];
+        this.shelterModels = [];
 
         this.status = Constants.STATUS_TYPE.NONE;
         this.menuButtonModels = [];
@@ -332,9 +342,13 @@ export class MarkerModel extends Model {
         this.setBgColor(Constants.COLORS.BLACK);
     }
 
-    deSelect() {
+    deSelect(propName) {
         this.setValue("selectState", "out");
         this.setBgColor(Constants.COLORS.WHITE);
+
+        if (propName) {
+            appModel.setValue(propName, null);
+        }
     }
 
     async show(isCenter = false) {
@@ -505,8 +519,18 @@ class MarkerTooltipModel extends Model {
         this.setValue("desc", desc);
         this.move(markerModel);
 
-        if (this.isTextOnly !== isTextOnly) {
-            this.setValue("isTextOnly", isTextOnly);
+        if (isTextOnly) {
+            if (this.isTextOnly !== isTextOnly) {
+                this.setValue("isTextOnly", isTextOnly);
+            }
+        } else {
+            const element = markerModel.element,
+                {top, left} = element.getBoundingClientRect();
+
+            this.setValue("style", {
+                top: `${top}px`,
+                left: `${left + 13}px`
+            });
         }
     }
 

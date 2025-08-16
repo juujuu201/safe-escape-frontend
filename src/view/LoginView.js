@@ -18,6 +18,8 @@ const LoginView = () => {
         email = data.get(Constants.INPUT_NAMES.EMAIL);
         password = data.get(Constants.INPUT_NAMES.PASSWORD);
 
+        // isSuccess = Requester.doLogin(email, password);
+
         if (isSuccess) {
 
         } else {

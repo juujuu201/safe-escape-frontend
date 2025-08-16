@@ -69,17 +69,22 @@ export const CongestionSideBarView = () => {
 
             appModel.setValue("status", _statusType.NONE);
         } else if (status === _statusType.EXIT_SELECTED) {
-            if (appModel.selectedExit) {
-                appModel.selectedExit.deSelect();
+            const {selectedExit, markerTooltipModel} = appModel;
+
+            if (selectedExit) {
+                selectedExit.deSelect();
             }
 
-            appModel.markerTooltipModel.hide();
+            appModel.removeRoutes();
+            markerTooltipModel.hide();
 
             appModel.setValue("selectedExit", null);
             appModel.setValue("routeInfo", {});
             appModel.setValue("status", _statusType.NONE);
         } else if (status === _statusType.EXIT_SHELTER_SELECTED) {
-            appModel.markerTooltipModel.hide();
+            const {markerTooltipModel} = appModel;
+
+            markerTooltipModel.hide();
             appModel.removeRoutes();
 
             appModel.setValue("selectedExit", null);

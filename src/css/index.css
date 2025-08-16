@@ -30,7 +30,7 @@
 
 .text.title .MuiTypography-root {margin: 10px 0; font-size: 1.5rem; font-weight: 600;}
 .text.sub_title .MuiTypography-root {width: fit-content; margin-bottom: 10px; font-size: 1.2rem; font-weight: 400; color: var(--black);}
-.text.description .MuiTypography-root {width: fit-content; color: var(--black);}
+.text.description .MuiTypography-root {width: fit-content; color: var(--black); text-align: justify;}
 
 .tab .MuiTabs-root .MuiButtonBase-root:not(.Mui-selected) {color: var(--deselected-color);}
 .tab .MuiTabs-root .MuiButtonBase-root:not(.Mui-selected) img {filter: grayscale(1);}
@@ -125,9 +125,11 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 
 .contents_area {position: relative; height: inherit; flex: 1; display: flex; flex-direction: column;}
 .contents_area #map_area {width: 100%; height: 100%;}
+
 .contents_area.congestion #map_area.selecting div {cursor: crosshair;}
 .contents_area.congestion #map_area.selecting img#marker {cursor: not-allowed !important;}
 .contents_area.congestion #map_area.selecting img#marker.removable {cursor: default !important;}
+
 .contents_area .refresh_btn {position: absolute; bottom: 20px; left: calc((100% - (var(--menu-bar-width) + var(--side_bar_width))) / 2 - var(--refresh-button-width) / 2); display: flex; flex-direction: row; width: var(--refresh-button-width); height: 45px; border-radius: 22px; background-color: var(--black); opacity: 60%; color: white; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.15) 0 0 7px 0;}
 .contents_area .refresh_btn .MuiButtonBase-root {flex: 1; color: white;}
 .contents_area .refresh_btn div {flex: 2; align-content: center;}

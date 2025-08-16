@@ -29,21 +29,31 @@ const _naverMap = window.naver,
     _statusType = Constants.STATUS_TYPE;
 
 const DocumentView = () => {
-    const [tabValue, setTabValue] = useState(_menuNames.HOME);
+    const selectedTab = useModel(appModel, "selectedTab");
+
+    useEffect(() => {
+        if (appModel.selectedShelter) {
+            appModel.selectedShelter.deSelect("selectedShelter");
+        }
+
+        if (appModel.markerTooltipModel.isVisible) {
+            appModel.markerTooltipModel.hide();
+        }
+    }, [selectedTab]);
 
     return (
         <div className={_viewNames.DOCUMENT}>
-            <MenuBarView setTabValue={setTabValue}/>
-            <div className={`${_viewNames.CONTENTS_AREA} ${tabValue}`}>
+            <MenuBarView selectedTab={selectedTab}/>
+            <div className={`${_viewNames.CONTENTS_AREA} ${selectedTab}`}>
                 <TitleBarView/>
-                <MapAreaView tabValue={tabValue}/>
+                <MapAreaView selectedTab={selectedTab}/>
             </div>
         </div>
     );
 };
 
 const MenuBarView = (props) => {
-    const {setTabValue} = props,
+    const {selectedTab} = props,
         tabInfoList = [
         {
             name: _menuNames.HOME,
@@ -66,19 +76,21 @@ const MenuBarView = (props) => {
             return true;
         }
 
-        setTabValue(tabName);
+        appModel.setValue("selectedTab", tabName);
     }
 
     return (
         <div className={_viewNames.MENU_BAR}>
             <SEImageButton className={Constants.LOGO_TAB_BUTTON} image={`${Constants.IMAGE_URL}logo.svg`} onClick={_onClick}/>
-            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME} descVisible={true} onChange={_onChange}/>
+            <SETab className={Constants.MENU_TAB} direction="vertical" tabInfoList={tabInfoList} defaultTab={_menuNames.HOME}
+                   value={selectedTab} descVisible={true} onChange={_onChange}/>
         </div>
     );
 };
 
 const TitleBarView = () => {
-    const [query, setQuery] = useState(""),
+    const {map} = appModel,
+        [query, setQuery] = useState(""),
         [results, setResults] = useState([]),
         [searchModel, setSearchModel] = useState(null),
         places = useRef(null);
@@ -103,20 +115,7 @@ const TitleBarView = () => {
     }
 
     function _onClickListItem(item) {
-        let newSearchModel;
-
-        if (searchModel) {
-            searchModel.hide();
-        }
-
-        newSearchModel = new MarkerModel({
-            position: Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap),
-            naverMap: _naverMap,
-            map: appModel.map
-        });
-
-        newSearchModel.show(true);
-        setSearchModel(newSearchModel);
+        map.setCenter(Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap));
     }
 
     useEffect(() => {
@@ -138,17 +137,27 @@ const TitleBarView = () => {
 };
 
 const MapAreaView = (props) => {
-    const {tabValue} = props,
+    const {selectedTab} = props,
+        {map} = appModel,
+        status = useModel(appModel, "status"),
+
+        // 메인
+        markerModels = useModel(appModel, "markerModels"),
+        polygonModels = useModel(appModel, "polygonModels"),
+        congestionModels = useModel(appModel, "congestionModels"),
+        shelterModels = useModel(appModel, "shelterModels"),
+
+        // 지도 위치 이동 시
         centerModel = useModel(appModel, "centerModel"),
         refreshBtnEnabled = useModel(appModel, "refreshBtnEnabled"),
-        status = useModel(appModel, "status"),
+
+        // 혼잡 지역 설정 시
         tempPolygonModel = useModel(appModel, "tempPolygonModel"),
         tempEdgeModels = useModel(appModel, "tempEdgeModels"),
         tempExitModels = useModel(appModel, "tempExitModels"),
-        markerModels = useModel(appModel, "markerModels"),
-        polygonModels = useModel(appModel, "polygonModels"),
-        selectedPolygon = useModel(appModel, "selectedPolygon"),
-        map = appModel.map;
+
+        // 혼잡 지역 선택 시
+        selectedPolygon = useModel(appModel, "selectedPolygon");
 
     function _onClickRefresh() {
         if (map) {
@@ -163,32 +172,6 @@ const MapAreaView = (props) => {
             }));
 
             /* TODO: 현재 위치에서 대피소 재검색 */
-        }
-    }
-
-    function _onClickExit(e, markerModel) {
-        const {status, selectedExit} = appModel;
-        // TODO: 삭제 예정
-        const testModel = new MarkerModel({
-            position: Util.getLocationObj(Define.DEFAULT_LOCATION, window.naver),
-            naverMap: window.naver,
-            map: appModel.map
-        });
-
-        if (selectedExit) {
-            selectedExit.deSelect();
-        }
-
-        appModel.setValue("selectedExit", markerModel);
-
-        if (appModel.isSelectedStatus()) {
-            const targetModel = (status === _statusType.EXIT_SELECTED) ? testModel : appModel.selectedShelter;
-
-            if (markerModel && targetModel) {
-                AppController.calcWalkingDistance(markerModel, targetModel);
-            }
-        } else {
-            appModel.setValue("status", _statusType.EXIT_SELECTED);
         }
     }
 
@@ -238,7 +221,7 @@ const MapAreaView = (props) => {
                     position: coord,
                     naverMap: _naverMap,
                     removable: true,
-                    onClick: _onClickExit,
+                    onClick: (e) => {AppController.setSelectedExit(e, markerModel)},
                     map
                 });
 
@@ -256,7 +239,7 @@ const MapAreaView = (props) => {
     }, [centerModel]);
 
     useEffect(() => {
-        if (tabValue === _menuNames.CONGESTION && appModel.isSettingStatus()) {
+        if (selectedTab === _menuNames.CONGESTION && appModel.isSettingStatus()) {
             const clickListener = _naverMap.maps.Event.addListener(appModel.map, "click", _onClickMap);
 
             return () => {
@@ -286,13 +269,7 @@ const MapAreaView = (props) => {
                 model.show();
             }
         }
-
-        if (polygonModels?.length > 0) {
-            for (const polygon of polygonModels) {
-                polygon.show(true);
-            }
-        }
-    }, [markerModels, polygonModels]);
+    }, [markerModels]);
 
     useEffect(() => {
         if (tempExitModels?.length > 0) {
@@ -315,9 +292,43 @@ const MapAreaView = (props) => {
         }
     }, [selectedPolygon]);
 
+    useEffect(() => {
+        if (congestionModels?.length > 0) {
+            for (const model of congestionModels) {
+                model.show();
+            }
+        }
+    }, [congestionModels]);
+
+    useEffect(() => {
+        if (shelterModels?.length > 0) {
+            for (const model of shelterModels) {
+                model.show();
+            }
+        }
+    }, [shelterModels]);
+
+    useEffect(() => {
+        if (polygonModels?.length > 0) {
+            for (const model of polygonModels) {
+                model.show();
+            }
+        }
+    }, [polygonModels]);
+
+    useEffect(() => {
+        if (map) {
+            const mapBounds = Util.getVisibleBounds(map);
+
+            if (mapBounds) {
+                AppController.setCrowdedInfo(map, mapBounds);
+            }
+        }
+    }, [map]);
+
     return (
         <div className={_viewNames.MAP_AREA}>
-            <Map showTooltip={true} tabValue={tabValue}/>
+            <Map showTooltip={true} tabValue={selectedTab}/>
             <MarkerTooltipView/>
             {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>}
                                                 desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
@@ -351,9 +362,9 @@ const Map = (props) => {
 
 const MarkerTooltipView = () => {
     const {markerTooltipModel, centerModel} = appModel,
+        {isTextOnly} = markerTooltipModel,
         isVisible = useModel(markerTooltipModel, "isVisible"),
-        isTextOnly = useModel(markerTooltipModel, "isTextOnly"),
-        style = useModel(markerTooltipModel, "style") || {},
+        style = useModel(markerTooltipModel, "style"),
         contentRef = useRef(null),
         [styleObj, setStyleObj] = useState(style || {});
 
@@ -365,12 +376,17 @@ const MarkerTooltipView = () => {
         if (isVisible && contentRef.current && !Util.isEmptyObject(style)) {
             const width = contentRef.current.offsetWidth,
                 height = contentRef.current.offsetHeight;
+            let newStyle = style;
 
-            setStyleObj({
-                ...style,
-                left: `${parseFloat(style["left"]) - width / 2}px`,
-                top: `${parseFloat(style["top"]) - height}px`
-            });
+            if (isTextOnly) {
+                newStyle = {
+                    ...newStyle,
+                    left: `${parseFloat(style["left"]) - width / 2}px`,
+                    top: `${parseFloat(style["top"]) - height}px`
+                };
+            }
+
+            setStyleObj(newStyle);
         }
     }, [isVisible, style]);
 

@@ -2,8 +2,7 @@ import {useEffect, useState} from "react";
 import {useModel} from "../controller/UseModel.js";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
-import Util from "../common/Utils.js";
-import {appModel, CongestionModel, MarkerModel} from "../model/AppModel.js";
+import {appModel} from "../model/AppModel.js";
 import {SEImage, SEText, SETextButton} from "../widgets/Widgets.js";
 
 const _naverMap = window.naver,
@@ -12,96 +11,29 @@ const _naverMap = window.naver,
     _statusType = Constants.STATUS_TYPE;
 
 export const HomeSideBarView = () => {
-    const shelterList = [       /** TODO: 테스트용 */
-            {
-                id: "1",
-                name: "인수동 자치회관",
-                address: "서울특별시 강북구 인수봉로 255",
-                latitude: 37.635451,
-                longitude: 127.019194
-            },
-            {
-                id: "2",
-                name: "성균관대학교 자연과학캠퍼스",
-                address: "경기 수원시 장안구 서부로 2066",
-                latitude: 37.293929,
-                longitude: 126.974348
-            }
-        ],
-        congestionList = [
-            {
-                latitude: 37.646713,
-                longitude: 127.024274,
-                level: Constants.CROWDED_LEVEL.FREE
-            },
-            {
-                latitude: 37.634296,
-                longitude: 127.017533,
-                level: Constants.CROWDED_LEVEL.CROWDED
-            }
-        ],
-        map = useModel(appModel, "map"),
+    const shelterModels = useModel(appModel, "shelterModels"),
         [shelterBtnList, setShelterBtnList] = useState([]);
 
     function _onClickButton(e, markerModel) {
         appModel.setValue("centerModel", markerModel);
     }
 
-    function _onClickShelter(e, markerModel) {
-        if (appModel.status === _statusType.EXIT_SELECTED) {
-            appModel.setValue("selectedShelter", markerModel);
-            appModel.setValue("status", _statusType.EXIT_SHELTER_SELECTED);
-        } else {
-            appModel.markerTooltipModel.show(markerModel);
-        }
-    }
-
     useEffect(() => {
-        if (map) {
-            const markerModels = [],
-                btnList = [];
+        if (shelterModels?.length > 0) {
+            const btnList = [];
 
-            // 대피소 마커 모델 생성
-            for (const shelter of shelterList) {
-                const {id, name, address, latitude, longitude} = shelter,
-                    markerModel = new MarkerModel({
-                        position: Util.getLocationObj({latitude, longitude}, _naverMap),
-                        title: name,
-                        desc: address,
-                        onClick: _onClickShelter,
-                        map,
-                        naverMap: _naverMap
-                    });
+            for (const model of shelterModels) {
+                // 사이드바 내 대피소 목록 표시
+                const {modelId, title, desc} = model;
 
-                if (markerModel) {
-                    markerModels.push(markerModel);
-
-                    // 사이드바 내 대피소 목록 표시
-                    btnList.push(
-                        <SETextButton key={id} title={name} desc={address} onClick={e => _onClickButton(e, markerModel)}/>
-                    );
-                }
+                btnList.push(
+                    <SETextButton key={modelId} title={title} desc={desc} onClick={e => _onClickButton(e, model)}/>
+                );
             }
 
-            appModel.setValue("markerModels", markerModels);
             setShelterBtnList(btnList);
-
-            // 혼잡도 모델 생성
-            for (const congestion of congestionList) {
-                const {latitude, longitude, level} = congestion,
-                    congestionModel = new CongestionModel({
-                        position: Util.getLocationObj({latitude, longitude}, _naverMap),
-                        level,
-                        map,
-                        naverMap: _naverMap
-                    });
-
-                if (congestionModel) {
-                    congestionModel.show();
-                }
-            }
         }
-    }, [map]);
+    }, [shelterModels]);
 
     return (
         <div className={`${_menuNames.HOME} ${_viewNames.SIDE_BAR}`}>
