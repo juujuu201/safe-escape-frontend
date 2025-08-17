@@ -181,8 +181,7 @@ export default class AppController {
     }
 
     static async setSelectedExit(e, markerModel) {
-        const {status, selectedExit} = appModel,
-            {code, data} = await Requester.getNearbyShelter(markerModel.id);
+        const {status, selectedExit} = appModel;
 
         if (selectedExit) {
             selectedExit.deSelect();
@@ -190,25 +189,31 @@ export default class AppController {
 
         appModel.setValue("selectedExit", markerModel);
 
-        if (code === _responseCode.OK) {
-            const shelterModel = appModel.getShelterModel(data.id);
+        if (appModel.isSelectedStatus()) {
+            let targetModel;
 
-            if (shelterModel) {
-                if (appModel.isSelectedStatus()) {
-                    const targetModel = (status === _statusType.EXIT_SELECTED) ? shelterModel : appModel.selectedShelter;
+            if (status === _statusType.EXIT_SELECTED) {
+                const {code, data} = await Requester.getNearbyShelter(markerModel.id);
 
-                    if (markerModel && targetModel) {
-                        AppController.calcWalkingDistance(markerModel, targetModel);
-                    }
-                } else {
-                    appModel.setValue("status", _statusType.EXIT_SELECTED);
+                if (code === _responseCode.OK) {
+                    appModel.routeInfo?.endMarker?.deSelect();
+                    targetModel = appModel.getShelterModel(data.id);
                 }
+            } else if (status === _statusType.EXIT_SHELTER_SELECTED) {
+                appModel.removeRoutes(true, false);
+                targetModel = appModel.selectedShelter;
             }
+
+            if (markerModel && targetModel) {
+                AppController.calcWalkingDistance(markerModel, targetModel);
+            }
+        } else {
+            appModel.setValue("status", _statusType.EXIT_SELECTED);
         }
     }
 
     static async setCrowdedInfo(map) {
-        const {selectedTab, markerTooltipModel, selectedShelter, shelterModels, polygonModels, congestionModels} = appModel,
+        const {selectedTab, markerTooltipModel, shelterModels, polygonModels, congestionModels} = appModel,
             mapBounds = Util.getVisibleBounds(map),
             {code, data} = await Requester.getCrowdedInfo(mapBounds);
 
@@ -281,10 +286,6 @@ export default class AppController {
                                         appModel.setValue("selectedTab", _tabNames.CONGESTION);
                                     }
 
-                                    if (selectedShelter) {
-                                        selectedShelter.deSelect("selectedShelter");
-                                    }
-
                                     if (markerTooltipModel.isVisible) {
                                         markerTooltipModel.hide();
                                     }
@@ -332,10 +333,18 @@ export default class AppController {
                             title: name,
                             desc: address,
                             onClick: (e, markerModel) => {
+                                if (appModel.selectedShelter) {
+                                    appModel.selectedShelter.deSelect("selectedShelter");
+                                }
+
+                                appModel.removeRoutes(false);
+                                appModel.markerTooltipModel.hide();
                                 appModel.setValue("selectedShelter", markerModel);
 
                                 if (appModel.status === _statusType.EXIT_SELECTED) {
                                     appModel.setValue("status", _statusType.EXIT_SHELTER_SELECTED);
+                                } else if (appModel.status === _statusType.EXIT_SHELTER_SELECTED) {
+                                    this.calcWalkingDistance(appModel.selectedExit, markerModel);
                                 } else {
                                     appModel.markerTooltipModel.show(markerModel);
                                 }

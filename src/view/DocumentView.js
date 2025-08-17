@@ -410,28 +410,48 @@ const Map = (props) => {
 };
 
 const MarkerTooltipView = () => {
-    const {markerTooltipModel, centerModel} = appModel,
+    const {markerTooltipModel, selectedShelter} = appModel,
         {isTextOnly} = markerTooltipModel,
         isVisible = useModel(markerTooltipModel, "isVisible"),
         style = useModel(markerTooltipModel, "style"),
+        sideBarRef = useModel(appModel, "sideBarRef"),
         contentRef = useRef(null),
         [styleObj, setStyleObj] = useState(style || {});
 
     function _onClose() {
-        AppController.closeMapTooltip(centerModel);
+        AppController.closeMapTooltip(selectedShelter);
     }
 
     useEffect(() => {
-        if (isVisible && contentRef.current && !Util.isEmptyObject(style)) {
-            const width = contentRef.current.offsetWidth,
-                height = contentRef.current.offsetHeight;
-            let newStyle = style;
+        const tooltipEl = contentRef.current;
+
+        if (isVisible && tooltipEl && !Util.isEmptyObject(style)) {
+            const width = tooltipEl.offsetWidth,
+                height = tooltipEl.offsetHeight,
+                sideBarEl = sideBarRef.current;
+            let newStyle = style,
+                overlapSize;
 
             if (isTextOnly) {
                 newStyle = {
                     ...newStyle,
                     left: `${parseFloat(style["left"]) - width / 2}px`,
                     top: `${parseFloat(style["top"]) - height}px`
+                };
+            }
+
+
+            overlapSize = Util.getOverlapSize(sideBarEl, {
+                left: parseFloat(newStyle.left),
+                top: parseFloat(newStyle.top),
+                width,
+                height
+            });
+
+            if (!Util.isEmptyObject(overlapSize)) {
+                newStyle = {
+                    ...newStyle,
+                    left: `${parseFloat(newStyle["left"]) - overlapSize.width}px`
                 };
             }
 

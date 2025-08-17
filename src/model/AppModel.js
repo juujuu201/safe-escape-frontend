@@ -100,6 +100,7 @@ class AppModel extends Model {
 
         this.map = null;
         this.mapBounds = null;
+        this.sideBarRef = null;
         this.curAddress = "";
 
         this.centerModel = null;
@@ -134,12 +135,17 @@ class AppModel extends Model {
         return (this.status === _statusType.EXIT_SELECTED || this.status === _statusType.EXIT_SHELTER_SELECTED);
     }
 
-    removeRoutes() {
-        if (!Util.isEmptyObject(this.routeInfo)) {
-            const {startMarker, endMarker, routeLines} = this.routeInfo;
+    removeRoutes(isStartMarkerDeselect = true, isEndMarkerDeselect = true) {
+        if (isStartMarkerDeselect) {
+            appModel.selectedExit?.deSelect();
+        }
 
-            startMarker.deSelect();
-            endMarker.deSelect();
+        if (isEndMarkerDeselect) {
+            appModel.selectedShelter?.deSelect();
+        }
+
+        if (!Util.isEmptyObject(this.routeInfo)) {
+            const {routeLines} = this.routeInfo;
 
             for (const line of routeLines) {
                 line.setMap(null);
@@ -449,15 +455,16 @@ export class MarkerModel extends Model {
 
             this.attachEvents();
             this.marker.setPosition(this.position);
+        }
 
-            if (isCenter) {
-                if (this.map.getZoom() !== _defaultZoomValue) {
-                    this.map.setOptions("zoom", _defaultZoomValue);
-                }
-
-                this.map.setCenter(this.position);
-                appModel.setValue("centerModel", this);
+        if (isCenter) {
+            if (this.map.getZoom() !== _defaultZoomValue) {
+                this.map.setOptions("zoom", _defaultZoomValue);
             }
+
+            this.map.setCenter(this.position);
+            appModel.setValue("centerModel", this);
+            appModel.setValue("refreshBtnEnabled", false);
         }
     }
 

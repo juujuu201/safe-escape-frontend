@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useModel} from "../controller/UseModel.js";
 import Constants from "../common/Constants.js";
 import Resources from "../common/Resources.js";
@@ -40,7 +40,8 @@ export const CongestionSideBarView = () => {
     const status = useModel(appModel, "status"),
         messageValue = useModel(appModel, "messageValue"),
         [visibleModels, setVisibleModels] = useState([]),
-        isSettingStatus = appModel.isSettingStatus();
+        isSettingStatus = appModel.isSettingStatus(),
+        ref = useRef(null);
 
     function _onCancelSelection() {
         if (isSettingStatus) {
@@ -179,11 +180,17 @@ export const CongestionSideBarView = () => {
         }
     }, [status]);
 
+    useEffect(() => {
+        if (ref.current) {
+            appModel.setValue("sideBarRef", ref);
+        }
+    }, [ref]);
+
     return (
         <div className={Constants.CONGESTION_MENU_AREA_CLASS}>
             <SEMessageBar desc={messageValue} isVisible={!!messageValue} onButtonClick={_onCancelSelection}
                           buttonDesc={Resources[isSettingStatus ? "CANCEL_SETTING" : "CANCEL_SELECTION"]}/>
-            <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`}>
+            <div className={`${_menuNames.CONGESTION} ${_viewNames.SIDE_BAR}`} ref={ref}>
                 {visibleModels.map(model =>
                     <CongestionMenuButton key={model.value} model={model}/>)}
             </div>

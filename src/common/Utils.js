@@ -185,4 +185,37 @@ export default class Util {
 
         return str.startsWith(prefix);
     }
+
+    static getOverlapSize(element, styleObj2) {
+        if (!element || this.isEmptyObject(styleObj2)) {
+            return null;
+        }
+
+        const rect1 = element.getBoundingClientRect(),
+            rect2 = {
+                left: styleObj2.left,
+                top: styleObj2.top,
+                right: styleObj2.left + styleObj2.width,
+                bottom: styleObj2.top + styleObj2.height
+            },
+            overlapLeft = Math.max(rect1.left, rect2.left),
+            overlapRight = Math.min(rect1.right, rect2.right),
+            overlapTop = Math.max(rect1.top, rect2.top),
+            overlapBottom = Math.min(rect1.bottom, rect2.bottom),
+            overlapWidth = Math.max(overlapRight - overlapLeft, 0),
+            overlapHeight = Math.max(overlapBottom - overlapTop, 0);
+        let result = null;
+
+        if (overlapWidth > 0 || overlapHeight > 0) {
+            result = {
+                left: overlapLeft,
+                top: overlapTop,
+                width: overlapWidth,
+                height: overlapHeight,
+                area: overlapWidth * overlapHeight
+            };
+        }
+
+        return result;
+    }
 }
