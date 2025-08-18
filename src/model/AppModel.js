@@ -403,6 +403,11 @@ export class MarkerModel extends Model {
         this.naverMap.maps.Event.addListener(this.map, "idle", e => {
             // 툴팁 위치를 재계산한다.
             _relocateTooltip();
+
+            if (appModel.selectedShelter) {
+                appModel.selectedShelter.deSelect();
+                appModel.setValue("selectedShelter", null);
+            }
         });
 
         this._setIconUrl();
