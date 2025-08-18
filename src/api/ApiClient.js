@@ -1,21 +1,36 @@
 import axios from "axios";
+import Define from "../common/Define.js";
+import Constants from "../common/Constants.js";
 
 // Axios 인스턴스 생성
 const ApiClient = axios.create({
-    baseURL: "https://terrapin-fresh-haddock.ngrok-free.app/admin",
+    baseURL: Define.BASE_URL,
     timeout: 30000,
     headers: {
         "ngrok-skip-browser-warning": true
     }
 });
 
+function _doRefresh(refreshToken) {
+    return requestWrapper(ApiClient.post(
+        "/auth/refresh",
+        {},
+        {
+            headers: {
+                Authorization: `Bearer ${refreshToken}`
+            }
+        }));
+}
+
 // 요청 인터셉터
 ApiClient.interceptors.request.use(
     config => {
-        const token = localStorage.getItem("accessToken");
+        if (config.baseURL === Define.BASE_URL) {
+            const token = localStorage.getItem("accessToken");
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
         }
 
         if (config.method && config.method.toLowerCase() !== "get") {
@@ -32,16 +47,36 @@ ApiClient.interceptors.request.use(
 // 응답 인터셉터
 ApiClient.interceptors.response.use(
     response => response.data,
-    error => {
+    async error => {
         if (error.response) {
-            console.error("API Error:", error.response.status, error.response.data);
+            const {status, data, config} = error.response;
 
-            if (error.response.status === 401) {
-                console.warn("로그인 만료");
+            console.error("API Error:", status, data);
+
+            if (status === 403 && data?.code === "EXPIRED_JWT") {
+                try {
+                    const refreshToken = localStorage.getItem("refreshToken"),
+                        {code, data} = await _doRefresh(refreshToken);
+
+                    if (code === Constants.RESPONSE_CODE.OK) {
+                        const newAccessToken = data.accessToken;
+
+                        localStorage.setItem("accessToken", newAccessToken);
+
+                        // 원래 요청 다시 실행
+                        config.headers.Authorization = `Bearer ${newAccessToken}`;
+                        return ApiClient(config);
+                    }
+                } catch (refreshError) {
+                    if (refreshError.response?.data?.code === "EXPIRED_REFRESH_TOKEN") {
+                        localStorage.clear();
+                        window.location.href = "/";
+                    }
+                    return Promise.reject(refreshError);
+                }
             }
-        } else {
-            console.error("Network Error:", error.message);
         }
+
         return Promise.reject(error);
     }
 );

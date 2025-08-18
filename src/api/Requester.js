@@ -1,5 +1,6 @@
-import ApiClient, {requestWrapper} from "./ApiClient";
-import Util from "../common/Utils";
+import ApiClient, {requestWrapper} from "./ApiClient.js";
+import Util from "../common/Utils.js";
+import Define from "../common/Define.js";
 
 export const doLogin = (email, password) => {
     return requestWrapper(ApiClient.post("/auth/login", {email, password}));
@@ -7,10 +8,6 @@ export const doLogin = (email, password) => {
 
 export const doLogout = () => {
     return requestWrapper(ApiClient.post("/auth/logout"));
-};
-
-export const doRefresh = (refreshToken) => {
-    return requestWrapper(ApiClient.post("/auth/refresh", {refreshToken}));
 };
 
 export const saveCrowdedArea = (edgeList, exitModels) => {
@@ -74,4 +71,19 @@ export const getCrowdedInfo = (mapBounds) => {
     }
 
     return requestWrapper(ApiClient.get(`/main?${locationList.join("&")}`));
+}
+
+export const getPriority = (exitModels) => {
+    const exitCoords = [];
+
+    for (const model of exitModels) {
+        const {id, position} = model;
+
+        exitCoords.push({
+            id,
+            latitude: position.lat(),
+            longitude: position.lng()
+        })
+    }
+    return requestWrapper(ApiClient.post("/rank_exits", {entrances: exitCoords}, { baseURL: Define.AI_BASE_URL}));
 }

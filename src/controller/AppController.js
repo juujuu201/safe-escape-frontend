@@ -261,7 +261,8 @@ export default class AppController {
                 for (const crowdedArea of crowdedAreaList) {
                     const {locationList, exitList} = crowdedArea,
                         polygonId = crowdedArea.id,
-                        edgeList = [];
+                        edgeList = [],
+                        markers = [];
                     let polygonModel;
 
                     for (const location of locationList) {
@@ -294,6 +295,7 @@ export default class AppController {
                                 }
                             });
 
+                        markers.push(exitModel);
                         exitModels.push(exitModel);
                     }
 
@@ -302,7 +304,7 @@ export default class AppController {
                         map,
                         naverMap: _naverMap,
                         pathList: edgeList,
-                        markers: exitModels,
+                        markers,
                         onClick: (e, model) => {
                             if (selectedTab !== _tabNames.CONGESTION) {
                                 appModel.setValue("selectedTab", _tabNames.CONGESTION);

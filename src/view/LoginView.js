@@ -18,10 +18,11 @@ const LoginView = () => {
         const formData = new FormData(e.currentTarget),
             email = formData.get(Constants.INPUT_NAMES.EMAIL),
             password = formData.get(Constants.INPUT_NAMES.PASSWORD),
-            {code, data, error} = await Requester.doLogin(email, password);
+            {code, data} = await Requester.doLogin(email, password);
 
         if (code === Constants.RESPONSE_CODE.OK) {
             localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("refreshToekn", data.refreshToekn);
             navigate("/main");
         } else {
             setOpen(true);

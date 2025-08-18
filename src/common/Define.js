@@ -34,7 +34,11 @@ const Define = {
     END_NAME: "도착지",
     KEY_PROP_NAME: "id",
     TITLE_PROP_NAME: "place_name",
-    DESC_PROP_NAME: "road_address_name"
+    DESC_PROP_NAME: "road_address_name",
+
+    /* 백엔드 API */
+    BASE_URL: "https://terrapin-fresh-haddock.ngrok-free.app/admin",
+    AI_BASE_URL: "https://6095d6084855.ngrok-free.app"
 };
 
 export default Define;

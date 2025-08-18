@@ -220,6 +220,10 @@ class AppModel extends Model {
     getShelterModel(shelterId) {
         return this.shelterModels.find(model => model.id === shelterId) ?? null;
     }
+
+    getExitModel(exitId) {
+        return this.exitModels.find(model => model.id === exitId) ?? null;
+    }
 }
 
 export class MarkerModel extends Model {
@@ -491,8 +495,8 @@ export class MarkerModel extends Model {
         }
     }
 
-    showPriority() {
-        _addFloatingElement(Constants.EXIT_PRIORITY_CLASS, this, "priorityEl", "1", {
+    showPriority(priority) {
+        _addFloatingElement(Constants.EXIT_PRIORITY_CLASS, this, "priorityEl", String(priority), {
             className: null,
             left: this.position.lat(),
             top: this.position.lng(),
@@ -593,11 +597,11 @@ class MarkerTooltipModel extends Model {
         this.setValue("desc", desc);
         this.move(markerModel);
 
-        if (isTextOnly) {
-            if (this.isTextOnly !== isTextOnly) {
-                this.setValue("isTextOnly", isTextOnly);
-            }
-        } else {
+        if (this.isTextOnly !== isTextOnly) {
+            this.setValue("isTextOnly", isTextOnly);
+        }
+
+        if (!isTextOnly) {
             const element = markerModel.element,
                 {top, left} = element.getBoundingClientRect();
 

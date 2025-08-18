@@ -440,7 +440,6 @@ const MarkerTooltipView = () => {
                 };
             }
 
-
             overlapSize = Util.getOverlapSize(sideBarEl, {
                 left: parseFloat(newStyle.left),
                 top: parseFloat(newStyle.top),
