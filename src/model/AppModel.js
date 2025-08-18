@@ -6,7 +6,6 @@ import AppController from "../controller/AppController.js";
 
 const _defaultMarkerIcon = `${Constants.IMAGE_URL}marker.svg`,
     _defaultMarkerSize = Define.MARKER_SIZE,
-    _defaultZoomValue = Define.ZOOM,
     _statusType = Constants.STATUS_TYPE,
     _themeColor = Constants.COLORS.THEME;
 let _modelIdCounter = 0;

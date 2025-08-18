@@ -28,7 +28,8 @@ const _naverMap = window.naver,
         [`${_mapOptionKeys.SCALE_CONTROL}`]: Define.SCALE_CONTROL
     },
     _congestionButtonValues = Constants.CONGESTION_BUTTON_VALUES,
-    _statusType = Constants.STATUS_TYPE;
+    _statusType = Constants.STATUS_TYPE,
+    _defaultZoomValue = Define.ZOOM;
 
 const DocumentView = () => {
     const selectedTab = useModel(appModel, "selectedTab");
@@ -135,15 +136,15 @@ const TitleBarView = () => {
         newSearchModel = new MarkerModel({
             position: Util.getLocationObj({latitude: item.y, longitude: item.x}, _naverMap),
             naverMap: _naverMap,
-            map: appModel.map,
+            map,
             hasMarker: false
         });
 
         newSearchModel.show(true);
         setSearchModel(newSearchModel);
 
-        if (appModel.map.getZoom() !== _defaultZoomValue) {
-            appModel.map.setOptions("zoom", _defaultZoomValue);
+        if (map.getZoom() !== _defaultZoomValue) {
+            map.setOptions("zoom", _defaultZoomValue);
         }
 
         AppController.setCrowdedInfo(map);
