@@ -142,6 +142,10 @@ const TitleBarView = () => {
         newSearchModel.show(true);
         setSearchModel(newSearchModel);
 
+        if (appModel.map.getZoom() !== _defaultZoomValue) {
+            appModel.map.setOptions("zoom", _defaultZoomValue);
+        }
+
         AppController.setCrowdedInfo(map);
         appModel.setValue("curAddress", item[Define.DESC_PROP_NAME]);
     }

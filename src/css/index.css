@@ -113,7 +113,7 @@ html, body {width: 100%; height: 100%; margin: 0; font-size: 13px;}
 .alert_dialog .MuiDialogContent-root .text_button .MuiButtonBase-root .text .MuiTypography-root {color: var(--white);}
 
 .logo_tab_button {width: 45px; height: 45px; margin-bottom: 20px;}
-.menu_tab {width: 60px;}
+.menu_tab {width: var(--menu-bar-width);}
 .menu_tab img {width: 25px; height: 25px;}
 .menu_tab .tab_panel {position: absolute; left: var(--menu-bar-width); top: var(--title-bar-height); width: calc(100% - var(--menu-bar-width)); height: calc(100% - var(--title-bar-height));}
 

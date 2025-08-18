@@ -1,6 +1,6 @@
 const Resources = {
     HOME: "홈",
-    CONGESTION: "혼잡도",
+    CONGESTION: "혼잡지역",
     LOGOUT: "로그아웃",
     SEARCH_ADDRESS: "주소 검색",
     SHELTER_SWITCH: "대피소 노출",

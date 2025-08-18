@@ -86,7 +86,7 @@ export default class AppController {
                 headers: {
                     "accept": "application/json",
                     "content-type": "application/json",
-                    "appKey": Define.TMAP_APP_KEY
+                    "appKey": process.env.REACT_APP_TMAP_API_KEY
                 },
                 body: JSON.stringify({
                     startX: startPos.lng(),
@@ -102,7 +102,7 @@ export default class AppController {
                 })
             };
 
-        fetch(Define.REQUEST_URL, options)
+        fetch(Define.TMAP_API_URL, options)
         .then(res => res.json())
         .then(res => {
             const fullRoutes = res.features;
@@ -173,6 +173,14 @@ export default class AppController {
                 startMarker: startMarkerModel,
                 endMarker: targetMarkerModel
             });
+
+            if (appModel.selectedExit !== startMarkerModel) {
+                appModel.setValue("selectedExit", startMarkerModel);
+            }
+
+            if (appModel.selectedShelter !== targetMarkerModel) {
+                appModel.setValue("selectedShelter", targetMarkerModel);
+            }
 
             startMarkerModel.select();
             targetMarkerModel.select();

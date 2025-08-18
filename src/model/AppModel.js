@@ -462,10 +462,6 @@ export class MarkerModel extends Model {
         }
 
         if (isCenter) {
-            if (this.map.getZoom() !== _defaultZoomValue) {
-                this.map.setOptions("zoom", _defaultZoomValue);
-            }
-
             this.map.setCenter(this.position);
             appModel.setValue("centerModel", this);
             appModel.setValue("refreshBtnEnabled", false);
