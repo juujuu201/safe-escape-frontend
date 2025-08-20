@@ -11,6 +11,7 @@ import {HomeSideBarView} from "./HomeView.js";
 import {CongestionSideBarView} from "./CongestionView.js";
 import * as Requester from "../api/Requester.js";
 import {SEImageButton, SETab, SEMapTooltip, SEIconButton, SEInputText, SESwitch} from "../widgets/Widgets.js";
+import {CircularProgress} from "@mui/material";
 import {Refresh} from "@mui/icons-material";
 
 const _naverMap = window.naver,
@@ -181,6 +182,7 @@ const MapAreaView = (props) => {
         {map} = appModel,
         status = useModel(appModel, "status"),
         showShelter = useModel(appModel, "showShelter"),
+        isLoading = useModel(appModel, "isLoading"),
 
         // 메인
         exitModels = useModel(appModel, "exitModels"),
@@ -386,6 +388,10 @@ const MapAreaView = (props) => {
             <MarkerTooltipView/>
             {refreshBtnEnabled && <SEIconButton className={`${Constants.REFRESH_BTN_CLASS}`} icon={<Refresh/>}
                                                 desc={Resources.REFRESH} onClick={_onClickRefresh}/>}
+            {isLoading &&
+                <div className={_viewNames.LOADING_VIEW}>
+                    <CircularProgress/>
+                </div>}
         </div>
     );
 };

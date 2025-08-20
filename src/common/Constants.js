@@ -7,8 +7,8 @@ const Constants = {
         TITLE_BAR: "title_bar",
         MAP_AREA: "map_area",
         SIDE_BAR: "side_bar",
-
-        LOGIN_VIEW: "login_view"
+        LOGIN_VIEW: "login_view",
+        LOADING_VIEW: "loading_view"
     },
 
     /* WIDGET NAMES */

@@ -250,21 +250,7 @@ const CongestionMenuButton = (props) => {
 
             // 비상구 추천
             case _congestionButtonValues.RECOMMEND_EXIT: {
-                const selectedPolygon = appModel.selectedPolygon,
-                    {code, data} = await Requester.getPriority(selectedPolygon.markers);
-
-                if (code.toLowerCase() === _responseCode.OK) {
-                    const exitList = data["ranked_entrances"];
-
-                    for (const [idx, exit] of exitList.entries()) {
-                        const {id} = exit,
-                            exitModel = appModel.getExitModel(parseInt(id));
-
-                        if (exitModel) {
-                            exitModel.showPriority(idx + 1);
-                        }
-                    }
-                }
+                AppController.setPriorityInfo();
                 break;
             }
 
@@ -283,12 +269,13 @@ const CongestionMenuButton = (props) => {
             // 비상구 설정 완료
             case _congestionButtonValues.FINISH_EXIT: {
                 const {tempPolygonModel, tempExitModels} = appModel,
-                    {code} = await Requester.saveCrowdedArea(tempPolygonModel.pathList, tempExitModels);
+                    {code, data} = await Requester.saveCrowdedArea(tempPolygonModel.pathList, tempExitModels);
 
                 if (code === _responseCode.OK) {
                     const exitModels = [...appModel.exitModels, ...tempExitModels],
                         polygonModels = [...appModel.polygonModels, ...[tempPolygonModel]];
 
+                    tempPolygonModel.setValue("id", data.crowdedAreaId);
                     tempPolygonModel.addMarkers(tempExitModels);
                     appModel.setValue("exitModels", exitModels);
                     appModel.setValue("polygonModels", polygonModels);

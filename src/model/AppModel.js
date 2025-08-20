@@ -106,6 +106,7 @@ class AppModel extends Model {
         this.markerTooltipModel = new MarkerTooltipModel();
         this.refreshBtnEnabled = false;
         this.showShelter = true;
+        this.isLoading = false;
 
         this.exitModels = [];
         this.polygonModels = [];
@@ -504,6 +505,12 @@ export class MarkerModel extends Model {
             topAdjust: -60
         });
     }
+
+    hidePriority() {
+        if (this.priorityEl) {
+            Util.addClass(this.priorityEl, Constants.INVISIBLE_CLASS);
+        }
+    }
 }
 
 export class PolygonModel extends Model {
@@ -574,6 +581,12 @@ export class PolygonModel extends Model {
     hide() {
         if (this.polygon) {
             this.polygon.setMap(null);
+        }
+    }
+
+    deSelect() {
+        if (this.element) {
+            Util.removeClass(this.element, Constants.SELECTED_CLASS);
         }
     }
 }

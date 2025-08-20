@@ -62,11 +62,11 @@ export default class AppController {
 
         if (isDeletePolygon && appModel.tempPolygonModel) {
             appModel.tempPolygonModel.polygon?.setMap(null);
+            appModel.setValue("tempEdgeModels", []);
+            appModel.setValue("tempPolygonModel", null);
         }
 
         appModel.setValue("tempExitModels", []);
-        appModel.setValue("tempEdgeModels", []);
-        appModel.setValue("tempPolygonModel", null);
     }
 
     static calcWalkingDistance(startMarkerModel, targetMarkerModel) {
@@ -222,11 +222,18 @@ export default class AppController {
 
     static async setCrowdedInfo(map) {
         const {selectedTab, markerTooltipModel, shelterModels, polygonModels, congestionModels} = appModel,
-            mapBounds = Util.getVisibleBounds(map),
-            {code, data} = await Requester.getCrowdedInfo(mapBounds);
+            mapBounds = Util.getVisibleBounds(map);
+        let responseData, code, data;
+
+        appModel.setValue("isLoading", true);
+        responseData = await Requester.getCrowdedInfo(mapBounds);
+        code = responseData.code;
+        data = responseData.data;
 
         if (code === _responseCode.OK) {
             const {populationList, crowdedAreaList, shelterList} = data;
+
+            appModel.setValue("isLoading", false);
 
             // 기존에 표시되고 있던 마커/폴리곤/혼잡 영역 제거
             if (polygonModels) {
@@ -319,8 +326,28 @@ export default class AppController {
                             }
 
                             if (!appModel.isSettingStatus()) {
+                                const selectedPolygon = appModel.selectedPolygon;
+                                let isSetPriority = false;
+
+                                if (selectedPolygon) {
+                                    selectedPolygon.deSelect();
+
+                                    for (const marker of selectedPolygon.markers) {
+                                        marker.hidePriority();
+                                    }
+
+                                    isSetPriority = true;
+                                }
+
                                 appModel.setValue("selectedPolygon", model);
-                                appModel.setValue("status", _statusType.CONGESTION_SELECTED);
+
+                                if (isSetPriority) {
+                                    AppController.setPriorityInfo(model);
+                                }
+
+                                if (appModel.status !== _statusType.CONGESTION_SELECTED) {
+                                    appModel.setValue("status", _statusType.CONGESTION_SELECTED);
+                                }
                             }
                         }
                     });
@@ -367,6 +394,30 @@ export default class AppController {
                 }
 
                 appModel.setValue("shelterModels", shelterModels);
+            }
+        }
+    }
+
+    static async setPriorityInfo(selectedPolygon = appModel.selectedPolygon) {
+        let responseData, code, data;
+
+        appModel.setValue("isLoading", true);
+        responseData = await Requester.getPriority(selectedPolygon.markers);
+        code = responseData.code;
+        data = responseData.data;
+
+        if (code.toLowerCase() === _responseCode.OK) {
+            const exitList = data["ranked_entrances"];
+
+            appModel.setValue("isLoading", false);
+
+            for (const [idx, exit] of exitList.entries()) {
+                const {id} = exit,
+                    exitModel = appModel.getExitModel(parseInt(id));
+
+                if (exitModel) {
+                    exitModel.showPriority(idx + 1);
+                }
             }
         }
     }
